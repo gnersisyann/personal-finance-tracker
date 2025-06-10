@@ -1,3 +1,4 @@
+/* Общий фон и контейнер */
 body {
   background: #f6f8fa;
   font-family: "Segoe UI", Arial, sans-serif;
@@ -6,7 +7,7 @@ body {
 }
 
 #app {
-  max-width: 500px;
+  max-width: 700px;
   margin: 40px auto;
   background: #fff;
   border-radius: 16px;
@@ -14,11 +15,97 @@ body {
   padding: 32px 24px;
 }
 
-form {
+/* Таблица */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  background: #f9fafb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th,
+td {
+  padding: 12px 10px;
+  text-align: left;
+}
+
+th {
+  background: #6366f1;
+  color: #fff;
+  font-weight: 600;
+  user-select: none;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+th:last-child {
+  cursor: default;
+  background: #6366f1;
+}
+
+th:hover:not(:last-child) {
+  background: #4f46e5;
+}
+
+tr:nth-child(even) td {
+  background: #f3f4f6;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+/* Кнопки */
+button {
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-right: 8px;
+}
+
+button:last-child {
+  margin-right: 0;
+}
+
+button:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Модальное окно */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal form {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  min-width: 320px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-bottom: 32px;
 }
 
 input,
@@ -35,56 +122,6 @@ input:focus,
 select:focus {
   border-color: #6366f1;
   outline: none;
-}
-
-button {
-  background: #6366f1;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 0;
-  font-size: 1em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-button:hover {
-  background: #4f46e5;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-li {
-  background: #f3f4f6;
-  border-radius: 6px;
-  margin-bottom: 12px;
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-li span {
-  display: inline-block;
-  min-width: 80px;
-}
-
-li button {
-  background: #ef4444;
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 4px;
-  font-size: 0.95em;
-  margin-left: 12px;
-}
-
-li button:hover {
-  background: #b91c1c;
 }
 
 [style*="color: red"] {
