@@ -33,13 +33,11 @@ const sortField = ref<"amount" | "category" | "description" | "date">("date");
 const sortDirection = ref<"asc" | "desc">("asc");
 
 const sortedTransactions = computed(() => {
-  // Копируем массив, чтобы не мутировать исходный
   const arr = [...filteredTransactions.value];
   arr.sort((a, b) => {
     let aValue = a[sortField.value];
     let bValue = b[sortField.value];
 
-    // Для сортировки по категории сравниваем числа, для остальных — строки или числа
     if (sortField.value === "category" || sortField.value === "amount") {
       aValue = Number(aValue);
       bValue = Number(bValue);
@@ -47,7 +45,6 @@ const sortedTransactions = computed(() => {
       aValue = new Date(aValue).getTime();
       bValue = new Date(bValue).getTime();
     } else {
-      // description — строка
       aValue = String(aValue).toLowerCase();
       bValue = String(bValue).toLowerCase();
     }
