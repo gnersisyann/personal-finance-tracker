@@ -18,6 +18,15 @@ export function removeTransaction(id: number) {
   transactions.value = transactions.value.filter((t) => t.id !== id);
 }
 
+export function removeCategoryTransaction(cat: number) {
+  transactions.value = transactions.value.filter((t) => t.category !== cat);
+}
+
 export function useTransactions() {
-  return { transactions, addTransaction, removeTransaction };
+  return {
+    transactions,
+    addTransaction,
+    removeTransaction,
+    removeCategoryTransaction,
+  };
 }

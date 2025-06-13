@@ -10,7 +10,7 @@ const totalAmount = computed(() =>
   transactions.value.reduce((sum, t) => (sum += t.amount), 0)
 );
 const amountByCategory = computed(() =>
-  categories.map((cat) => ({
+  categories.value.map((cat) => ({
     name: cat.name,
     amount: transactions.value
       .filter((t) => t.category === cat.id)
@@ -20,7 +20,7 @@ const amountByCategory = computed(() =>
 
 const transactionCount = computed(() => transactions.value.length);
 const countByCategory = computed(() =>
-  categories.map((cat) => ({
+  categories.value.map((cat) => ({
     name: cat.name,
     count: transactions.value.filter((t) => t.category === cat.id).length,
   }))

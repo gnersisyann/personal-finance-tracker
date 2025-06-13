@@ -50,6 +50,7 @@ function submitForm() {
     date: new Date().toISOString(),
     description: description.value,
   };
+  if (error.value != "") return;
   addTransaction(transaction);
   amount.value = null;
   category.value = null;

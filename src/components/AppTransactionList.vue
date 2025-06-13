@@ -8,9 +8,14 @@ import type { Transaction } from "../composables/useTransactions.ts";
 const props = defineProps<{ selectedCategory: number | null }>();
 const { categories, getCategory } = useCategories();
 
+const startDate = ref<string>("");
+const endDate = ref<string>("");
+
 const isModalOpen = ref(false);
 const editingTransaction = ref<Transaction | null>(null);
 const error = ref("");
+
+const search = ref("");
 
 function openEditModal(transaction: Transaction) {
   editingTransaction.value = { ...transaction };
@@ -22,6 +27,22 @@ function closeModal() {
   editingTransaction.value = null;
 }
 
+const confirmDeleteId = ref<number | null>(null);
+
+function askDelete(id: number) {
+  confirmDeleteId.value = id;
+}
+
+function confirmDelete() {
+  if (confirmDeleteId.value !== null) {
+    removeTransaction(confirmDeleteId.value);
+    confirmDeleteId.value = null;
+  }
+}
+
+function cancelDelete() {
+  confirmDeleteId.value = null;
+}
 const { transactions, removeTransaction } = useTransactions();
 const filteredTransactions = computed(() =>
   props.selectedCategory == null
@@ -29,11 +50,32 @@ const filteredTransactions = computed(() =>
     : transactions.value.filter((t) => t.category === props.selectedCategory)
 );
 
+const searchedTransactions = computed(() =>
+  filteredTransactions.value.filter((t) =>
+    t.description.toLowerCase().includes(search.value.trim().toLowerCase())
+  )
+);
+
 const sortField = ref<"amount" | "category" | "description" | "date">("date");
 const sortDirection = ref<"asc" | "desc">("asc");
 
+const dateFilteredTransactions = computed(() => {
+  return searchedTransactions.value.filter((t) => {
+    const tDate = new Date(t.date).setHours(0, 0, 0, 0);
+    const start = startDate.value
+      ? new Date(startDate.value).setHours(0, 0, 0, 0)
+      : null;
+    const end = endDate.value
+      ? new Date(endDate.value).setHours(0, 0, 0, 0)
+      : null;
+    if (start && tDate < start) return false;
+    if (end && tDate > end) return false;
+    return true;
+  });
+});
+
 const sortedTransactions = computed(() => {
-  const arr = [...filteredTransactions.value];
+  const arr = [...dateFilteredTransactions.value];
   arr.sort((a, b) => {
     let aValue = a[sortField.value];
     let bValue = b[sortField.value];
@@ -109,7 +151,21 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
 </script>
 
 <template>
-  <table border="1">
+  <div style="margin-bottom: 16px">
+    <label>
+      Start date:
+      <input type="date" v-model="startDate" />
+    </label>
+    <label style="margin-left: 12px">
+      End date:
+      <input type="date" v-model="endDate" />
+    </label>
+    <label style="margin-left: 12px">
+      Search:
+      <input type="text" v-model="search" placeholder="Description..." />
+    </label>
+  </div>
+  <table v-if="sortedTransactions.length" border="1">
     <thead>
       <tr>
         <th @click="sortBy('amount')" style="cursor: pointer">Amount</th>
@@ -128,7 +184,7 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
         <td>{{ transaction.description }}</td>
         <td>{{ new Date(transaction.date).toLocaleString() }}</td>
         <td>
-          <button @click="removeTransaction(transaction.id)">Delete</button>
+          <button @click="askDelete(transaction.id)">Delete</button>
           <button v-if="!isModalOpen" @click="openEditModal(transaction)">
             Edit
           </button>
@@ -136,6 +192,16 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
       </tr>
     </tbody>
   </table>
+  <div v-else style="text-align: center; color: #888; margin: 24px 0">
+    No transactions to display.
+  </div>
+  <div v-if="confirmDeleteId !== null" class="modal">
+    <div>
+      <p>Are you sure you want to delete this transaction?</p>
+      <button @click="confirmDelete">Yes</button>
+      <button @click="cancelDelete">No</button>
+    </div>
+  </div>
   <div v-if="isModalOpen && editingTransaction" class="modal">
     <form @submit.prevent="submitEdit">
       <div>
