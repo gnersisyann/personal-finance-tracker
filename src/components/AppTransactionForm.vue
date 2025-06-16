@@ -5,44 +5,74 @@ import type { Transaction } from "../composables/useTransactions.ts";
 import { useCategories } from "../composables/useCategories.ts";
 const { addTransaction } = useTransactions();
 
+const showModal = ref(false);
+
 const amount = ref<number | null>(null);
 const category = ref<number | null>(null);
 const description = ref<string | null>(null);
-const error = ref("");
+
+const amountError = ref("");
+const descriptionError = ref("");
+const formError = ref("");
 const { categories } = useCategories();
 
-watch([amount, description], () => {
-  if (
-    amount.value === null ||
-    !description.value ||
-    description.value.trim() === ""
-  ) {
-    error.value = "";
+watch(amount, () => {
+  if (amount.value === null || amount.value === undefined) {
+    amountError.value = "";
     return;
   }
-
   if (isNaN(amount.value)) {
-    error.value = "Amount must be a number";
+    amountError.value = "Amount must be a number";
     return;
   }
   if (amount.value <= 0) {
-    error.value = "Invalid amount (must be positive)";
+    amountError.value = "Invalid amount (must be positive)";
     return;
   }
-  error.value = "";
+  amountError.value = "";
 });
 
+watch(description, () => {
+  if (!description.value || description.value.trim() === "") {
+    descriptionError.value = "";
+    return;
+  }
+  if (description.value.trim().length < 2) {
+    descriptionError.value = "Description is too short";
+    return;
+  }
+  descriptionError.value = "";
+});
+
+function openModal() {
+  showModal.value = true;
+  amount.value = null;
+  category.value = null;
+  description.value = "";
+  amountError.value = "";
+  descriptionError.value = "";
+  formError.value = "";
+}
+
+function closeModal() {
+  showModal.value = false;
+}
+
 function submitForm() {
+  formError.value = "";
   if (
     amount.value === null ||
     category.value === null ||
     !description.value ||
     description.value.trim() === ""
   ) {
-    error.value = "Fill the fields";
+    formError.value = "Fill all the fields";
     return;
   }
-
+  if (amountError.value || descriptionError.value) {
+    formError.value = "Please fix the errors above";
+    return;
+  }
   const transaction: Transaction = {
     id: Date.now(),
     amount: amount.value,
@@ -50,28 +80,64 @@ function submitForm() {
     date: new Date().toISOString(),
     description: description.value,
   };
-  if (error.value != "") return;
   addTransaction(transaction);
-  amount.value = null;
-  category.value = null;
-  description.value = "";
-  error.value = "";
+  closeModal();
 }
 </script>
 
 <template>
-  <form @submit.prevent="submitForm">
-    <div><input v-model.number="amount" placeholder="Amount" /></div>
-    <div>
-      <select v-model.number="category">
-        <option :value="null" disabled>Category</option>
-        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-          {{ cat.name }}
-        </option>
-      </select>
+  <button @click="openModal" style="margin-bottom: 12px">
+    Add Transaction
+  </button>
+  <div v-if="showModal" class="modal">
+    <div class="modal-content">
+      <h3>Add Transaction</h3>
+      <form @submit.prevent="submitForm">
+        <div>
+          <input v-model.number="amount" placeholder="Amount" />
+          <div v-if="amountError" style="color: red">{{ amountError }}</div>
+        </div>
+        <div>
+          <select v-model.number="category">
+            <option :value="null" disabled>Category</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+              {{ cat.name }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <input v-model="description" placeholder="Description" />
+          <div v-if="descriptionError" style="color: red">
+            {{ descriptionError }}
+          </div>
+        </div>
+        <button type="submit">Submit</button>
+        <button type="button" @click="closeModal">Cancel</button>
+        <div v-if="formError" style="color: red; margin-top: 8px">
+          {{ formError }}
+        </div>
+      </form>
     </div>
-    <div><input v-model="description" placeholder="Description" /></div>
-    <button type="submit">Submit</button>
-    <div v-if="error" style="color: red">{{ error }}</div>
-  </form>
+  </div>
 </template>
+
+<style scoped>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  min-width: 300px;
+}
+</style>

@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { watch, ref } from "vue";
+import { watch, ref, computed } from "vue";
 import { useTransactions } from "../composables/useTransactions.ts";
-import { computed } from "vue";
 import { useCategories } from "../composables/useCategories.ts";
 import type { Transaction } from "../composables/useTransactions.ts";
 
-const props = defineProps<{ selectedCategory: number | null }>();
 const { categories, getCategory } = useCategories();
 
 const startDate = ref<string>("");
 const endDate = ref<string>("");
+
+const showFilter = ref(false);
+const showSearch = ref(false);
+
+const selectedCategory = ref<number | null>(null);
 
 const isModalOpen = ref(false);
 const editingTransaction = ref<Transaction | null>(null);
@@ -44,10 +47,11 @@ function cancelDelete() {
   confirmDeleteId.value = null;
 }
 const { transactions, removeTransaction } = useTransactions();
+
 const filteredTransactions = computed(() =>
-  props.selectedCategory == null
+  selectedCategory.value == null
     ? transactions.value
-    : transactions.value.filter((t) => t.category === props.selectedCategory)
+    : transactions.value.filter((t) => t.category === selectedCategory.value)
 );
 
 const searchedTransactions = computed(() =>
@@ -152,7 +156,23 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
 
 <template>
   <div style="margin-bottom: 16px">
+    <button @click="showFilter = !showFilter" style="margin-right: 8px">
+      Filter
+    </button>
+    <button @click="showSearch = !showSearch">Search</button>
+  </div>
+
+  <div v-if="showFilter" style="margin-bottom: 12px">
     <label>
+      Category:
+      <select v-model="selectedCategory">
+        <option :value="null">All categories</option>
+        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+          {{ cat.name }}
+        </option>
+      </select>
+    </label>
+    <label style="margin-left: 16px">
       Start date:
       <input type="date" v-model="startDate" />
     </label>
@@ -160,11 +180,17 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
       End date:
       <input type="date" v-model="endDate" />
     </label>
-    <label style="margin-left: 12px">
-      Search:
-      <input type="text" v-model="search" placeholder="Description..." />
-    </label>
   </div>
+
+  <div v-if="showSearch" style="margin-bottom: 12px">
+    <input
+      type="text"
+      v-model="search"
+      placeholder="Description..."
+      style="width: 200px"
+    />
+  </div>
+
   <table v-if="sortedTransactions.length" border="1">
     <thead>
       <tr>
@@ -203,7 +229,8 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
     </div>
   </div>
   <div v-if="isModalOpen && editingTransaction" class="modal">
-    <form @submit.prevent="submitEdit">
+    <form @submit.prevent="submitEdit" class="modal-content">
+      <h3>Edit Transaction</h3>
       <div>
         <input
           v-model.number="editingTransaction.amount"
@@ -225,8 +252,29 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
         />
       </div>
       <button type="submit">Submit</button>
-      <div v-if="error" style="color: red">{{ error }}</div>
+      <button type="button" @click="closeModal">Cancel</button>
+      <div v-if="error" style="color: red; margin-top: 8px">{{ error }}</div>
     </form>
-    <button @click="closeModal">Cancel</button>
   </div>
 </template>
+
+<style scoped>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  min-width: 300px;
+}
+</style>

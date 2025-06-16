@@ -1,4 +1,3 @@
-/* Общий фон и контейнер */
 body {
   background: #f6f8fa;
   font-family: "Segoe UI", Arial, sans-serif;
@@ -15,7 +14,6 @@ body {
   padding: 32px 24px;
 }
 
-/* Таблица */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -57,7 +55,6 @@ tr:last-child td {
   border-bottom: none;
 }
 
-/* Кнопки */
 button {
   background: #6366f1;
   color: #fff;
@@ -84,7 +81,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Модальное окно */
 .modal {
   position: fixed;
   top: 0;
