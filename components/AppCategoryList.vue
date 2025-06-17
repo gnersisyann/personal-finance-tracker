@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { useCategories } from "../composables/useCategories";
 const emit = defineEmits(["selectionChanged"]);
 
 const { categories, updateCategory } = useCategories();
@@ -89,7 +87,11 @@ function cancelEdit() {
       </tr>
     </tbody>
   </table>
-  <div v-else style="text-align: center; color: #888; margin: 24px 0">
+  <div
+    class="no-data"
+    v-else
+    style="text-align: center; color: #888; margin: 24px 0"
+  >
     No categories to
   </div>
 </template>

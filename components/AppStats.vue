@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { useTransactions } from "../composables/useTransactions";
-import { useCategories } from "../composables/useCategories";
-import { computed } from "vue";
-
 const { transactions } = useTransactions();
 const { categories } = useCategories();
 
@@ -52,7 +48,7 @@ const countByCategory = computed(() =>
   </div>
 </template>
 
-<style scoped>
+<style>
 .stats-container {
   background: #f3f4f6;
   border-radius: 10px;

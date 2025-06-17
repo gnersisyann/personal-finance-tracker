@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import AppCategoryList from "./AppCategoryList.vue";
-import { useCategories } from "../composables/useCategories";
-import { useTransactions } from "../composables/useTransactions";
-
 const selectedIds = ref<number[]>([]);
 const { addCategory, removeCategory } = useCategories();
 const { removeCategoryTransaction } = useTransactions();
@@ -65,7 +60,7 @@ function submitAddCategory() {
   </div>
 </template>
 
-<style scoped>
+<style>
 .modal {
   position: fixed;
   top: 0;

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { watch, ref, computed } from "vue";
-import { useTransactions } from "../composables/useTransactions.ts";
-import { useCategories } from "../composables/useCategories.ts";
-import type { Transaction } from "../composables/useTransactions.ts";
-
+const props = defineProps({
+  selectedCategory: {
+    type: [Number, null],
+    default: null,
+  },
+});
 const { categories, getCategory } = useCategories();
 
 const startDate = ref<string>("");
@@ -218,7 +219,11 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
       </tr>
     </tbody>
   </table>
-  <div v-else style="text-align: center; color: #888; margin: 24px 0">
+  <div
+    class="no-data"
+    v-else
+    style="text-align: center; color: #888; margin: 24px 0"
+  >
     No transactions to display.
   </div>
   <div v-if="confirmDeleteId !== null" class="modal">
@@ -258,7 +263,7 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
   </div>
 </template>
 
-<style scoped>
+<style>
 .modal {
   position: fixed;
   top: 0;

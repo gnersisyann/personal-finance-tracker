@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import { useTransactions } from "../composables/useTransactions.ts";
-import type { Transaction } from "../composables/useTransactions.ts";
-import { useCategories } from "../composables/useCategories.ts";
 const { addTransaction } = useTransactions();
 
 const showModal = ref(false);
@@ -25,7 +21,7 @@ watch(amount, () => {
     amountError.value = "Amount must be a number";
     return;
   }
-  if (amount.value <= 0) {
+  if (amount.value < 0) {
     amountError.value = "Invalid amount (must be positive)";
     return;
   }
@@ -121,7 +117,7 @@ function submitForm() {
   </div>
 </template>
 
-<style scoped>
+<style>
 .modal {
   position: fixed;
   top: 0;
