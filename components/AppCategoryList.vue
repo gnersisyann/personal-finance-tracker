@@ -92,6 +92,6 @@ function cancelEdit() {
     v-else
     style="text-align: center; color: #888; margin: 24px 0"
   >
-    No categories to
+    No categories to display
   </div>
 </template>
