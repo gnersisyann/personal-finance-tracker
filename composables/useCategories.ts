@@ -1,12 +1,11 @@
 import { ref } from "vue";
+import type { Category } from "~/types";
 
 export const categories = ref([
   { id: 1, name: "Food" },
   { id: 2, name: "Transport" },
   { id: 3, name: "Shopping" },
 ]);
-
-export type Category = { id: number; name: string };
 
 export function getCategory(id: number): string {
   const category = categories.value.find((category) => category.id === id);

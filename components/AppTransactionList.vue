@@ -52,7 +52,7 @@ const { transactions, removeTransaction } = useTransactions();
 const filteredTransactions = computed(() =>
   selectedCategory.value == null
     ? transactions.value
-    : transactions.value.filter((t) => t.category === selectedCategory.value)
+    : transactions.value.filter((t) => t.categoryId === selectedCategory.value)
 );
 
 const searchedTransactions = computed(() =>
@@ -207,7 +207,7 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
     <tbody>
       <tr v-for="transaction in sortedTransactions" :key="transaction.id">
         <td>{{ transaction.amount }}</td>
-        <td>{{ getCategory(transaction.category) }}</td>
+        <td>{{ getCategory(transaction.categoryId) }}</td>
         <td>{{ transaction.description }}</td>
         <td>{{ new Date(transaction.date).toLocaleString() }}</td>
         <td>
@@ -243,7 +243,7 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
         />
       </div>
       <div>
-        <select v-model.number="editingTransaction.category">
+        <select v-model.number="editingTransaction.categoryId">
           <option :value="null" disabled>Category</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">
             {{ cat.name }}

@@ -2,8 +2,7 @@
   <div>
     <h2>Transactions</h2>
     <AppStats />
-    <AppTransactionForm />
-    <AppTransactionList :selectedCategory="selectedCategory" />
+    <AppTransactionManager />
     <NuxtLink to="/" style="margin-left: 16px">
       <button>Home</button>
     </NuxtLink>

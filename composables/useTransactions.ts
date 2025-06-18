@@ -1,12 +1,5 @@
 import { ref } from "vue";
-
-export type Transaction = {
-  id: number;
-  amount: number;
-  category: number;
-  date: string;
-  description: string;
-};
+import type { Transaction } from "~/types";
 
 const transactions = ref<Transaction[]>([]);
 
@@ -19,7 +12,7 @@ export function removeTransaction(id: number) {
 }
 
 export function removeCategoryTransaction(cat: number) {
-  transactions.value = transactions.value.filter((t) => t.category !== cat);
+  transactions.value = transactions.value.filter((t) => t.categoryId !== cat);
 }
 
 export function useTransactions() {

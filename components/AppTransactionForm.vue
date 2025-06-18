@@ -1,139 +1,106 @@
+<template>
+  <form @submit.prevent="submitForm" class="transaction-form">
+    <div>
+      <label for="amount">Amount</label>
+      <input
+        id="amount"
+        v-model.number="form.amount"
+        type="number"
+        min="0"
+        step="0.01"
+        required
+      />
+    </div>
+    <div>
+      <label for="category">Category</label>
+      <select id="category" v-model="form.categoryId" required>
+        <option value="" disabled>Select category</option>
+        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+          {{ cat.name }}
+        </option>
+      </select>
+    </div>
+    <div>
+      <label for="description">Description</label>
+      <input id="description" v-model="form.description" type="text" required />
+    </div>
+    <div v-if="error" class="error-message">
+      {{ error }}
+    </div>
+    <button type="submit" :disabled="!!error" :class="{ disabled: !!error }">
+      Add Transaction
+    </button>
+  </form>
+</template>
+
 <script setup lang="ts">
-const { addTransaction } = useTransactions();
+import { ref, watch, defineEmits } from "vue";
+import { validateTransaction } from "~/utils/validation";
+import type { Transaction, Category } from "~/types";
 
-const showModal = ref(false);
+const props = defineProps<{
+  categories: Category[];
+}>();
 
-const amount = ref<number | null>(null);
-const category = ref<number | null>(null);
-const description = ref<string | null>(null);
+const emit = defineEmits<{
+  (e: "add", tx: Transaction): void;
+}>();
 
-const amountError = ref("");
-const descriptionError = ref("");
-const formError = ref("");
-const { categories } = useCategories();
-
-watch(amount, () => {
-  if (amount.value === null || amount.value === undefined) {
-    amountError.value = "";
-    return;
-  }
-  if (isNaN(amount.value)) {
-    amountError.value = "Amount must be a number";
-    return;
-  }
-  if (amount.value < 0) {
-    amountError.value = "Invalid amount (must be positive)";
-    return;
-  }
-  amountError.value = "";
+const form = ref<Partial<Transaction>>({
+  amount: undefined,
+  categoryId: undefined,
+  description: "",
 });
 
-watch(description, () => {
-  if (!description.value || description.value.trim() === "") {
-    descriptionError.value = "";
-    return;
-  }
-  if (description.value.trim().length < 2) {
-    descriptionError.value = "Description is too short";
-    return;
-  }
-  descriptionError.value = "";
-});
+const error = ref<string | null>(null);
 
-function openModal() {
-  showModal.value = true;
-  amount.value = null;
-  category.value = null;
-  description.value = "";
-  amountError.value = "";
-  descriptionError.value = "";
-  formError.value = "";
-}
-
-function closeModal() {
-  showModal.value = false;
-}
+watch(
+  form,
+  (newForm) => {
+    // Дата подставляется текущая для валидации
+    error.value = validateTransaction({
+      ...newForm,
+      date: new Date().toISOString(),
+    });
+  },
+  { deep: true, immediate: true }
+);
 
 function submitForm() {
-  formError.value = "";
-  if (
-    amount.value === null ||
-    category.value === null ||
-    !description.value ||
-    description.value.trim() === ""
-  ) {
-    formError.value = "Fill all the fields";
-    return;
-  }
-  if (amountError.value || descriptionError.value) {
-    formError.value = "Please fix the errors above";
-    return;
-  }
-  const transaction: Transaction = {
-    id: Date.now(),
-    amount: amount.value,
-    category: category.value,
+  error.value = validateTransaction({
+    ...form.value,
     date: new Date().toISOString(),
-    description: description.value,
+  });
+  if (error.value) return;
+  const tx: Transaction = {
+    id: Date.now(),
+    amount: Number(form.value.amount),
+    categoryId: Number(form.value.categoryId),
+    date: new Date().toISOString(),
+    description: form.value.description!.trim(),
   };
-  addTransaction(transaction);
-  closeModal();
+  emit("add", tx);
+  form.value = {
+    amount: undefined,
+    categoryId: undefined,
+    description: "",
+  };
 }
 </script>
 
-<template>
-  <button @click="openModal" style="margin-bottom: 12px">
-    Add Transaction
-  </button>
-  <div v-if="showModal" class="modal">
-    <div class="modal-content">
-      <h3>Add Transaction</h3>
-      <form @submit.prevent="submitForm">
-        <div>
-          <input v-model.number="amount" placeholder="Amount" />
-          <div v-if="amountError" style="color: red">{{ amountError }}</div>
-        </div>
-        <div>
-          <select v-model.number="category">
-            <option :value="null" disabled>Category</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-              {{ cat.name }}
-            </option>
-          </select>
-        </div>
-        <div>
-          <input v-model="description" placeholder="Description" />
-          <div v-if="descriptionError" style="color: red">
-            {{ descriptionError }}
-          </div>
-        </div>
-        <button type="submit">Submit</button>
-        <button type="button" @click="closeModal">Cancel</button>
-        <div v-if="formError" style="color: red; margin-top: 8px">
-          {{ formError }}
-        </div>
-      </form>
-    </div>
-  </div>
-</template>
-
-<style>
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+<style scoped>
+.transaction-form {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
+  flex-direction: column;
+  gap: 1rem;
 }
-.modal-content {
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  min-width: 300px;
+.error-message {
+  color: red;
+  margin-top: 0.5rem;
+}
+button.disabled {
+  background: #ccc;
+  color: #888;
+  cursor: not-allowed;
 }
 </style>
