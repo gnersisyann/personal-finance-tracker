@@ -34,7 +34,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineEmits } from "vue";
 import { validateTransaction } from "~/utils/validation";
 import type { Transaction, Category } from "~/types";
 
@@ -57,7 +56,6 @@ const error = ref<string | null>(null);
 watch(
   form,
   (newForm) => {
-    // Дата подставляется текущая для валидации
     error.value = validateTransaction({
       ...newForm,
       date: new Date().toISOString(),

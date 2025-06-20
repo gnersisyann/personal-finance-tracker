@@ -9,7 +9,7 @@ const amountByCategory = computed(() =>
   categories.value.map((cat) => ({
     name: cat.name,
     amount: transactions.value
-      .filter((t) => t.category === cat.id)
+      .filter((t) => t.categoryId === cat.id)
       .reduce((sum, t) => sum + t.amount, 0),
   }))
 );
@@ -18,7 +18,7 @@ const transactionCount = computed(() => transactions.value.length);
 const countByCategory = computed(() =>
   categories.value.map((cat) => ({
     name: cat.name,
-    count: transactions.value.filter((t) => t.category === cat.id).length,
+    count: transactions.value.filter((t) => t.categoryId === cat.id).length,
   }))
 );
 </script>

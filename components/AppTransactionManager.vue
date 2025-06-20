@@ -19,12 +19,13 @@ import AppTransactionForm from "./AppTransactionForm.vue";
 import AppTransactionList from "./AppTransactionList.vue";
 import { useCategories } from "~/composables/useCategories";
 import { useTransactions } from "~/composables/useTransactions";
+import type { Transaction } from "~/types";
 
 const showModal = ref(false);
 const { categories } = useCategories();
 const { addTransaction } = useTransactions();
 
-function handleAdd(tx) {
+function handleAdd( tx: Transaction) {
   addTransaction(tx);
   showModal.value = false;
 }

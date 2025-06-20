@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Transaction } from '~/types';
 const props = defineProps({
   selectedCategory: {
     type: [Number, null],
@@ -57,11 +58,11 @@ const filteredTransactions = computed(() =>
 
 const searchedTransactions = computed(() =>
   filteredTransactions.value.filter((t) =>
-    t.description.toLowerCase().includes(search.value.trim().toLowerCase())
+    t.description && t.description.toLowerCase().includes(search.value.trim().toLowerCase())
   )
 );
 
-const sortField = ref<"amount" | "category" | "description" | "date">("date");
+const sortField = ref<"amount" | "categoryId" | "description" | "date">("date");
 const sortDirection = ref<"asc" | "desc">("asc");
 
 const dateFilteredTransactions = computed(() => {
@@ -85,12 +86,12 @@ const sortedTransactions = computed(() => {
     let aValue = a[sortField.value];
     let bValue = b[sortField.value];
 
-    if (sortField.value === "category" || sortField.value === "amount") {
+    if (sortField.value === "categoryId" || sortField.value === "amount") {
       aValue = Number(aValue);
       bValue = Number(bValue);
     } else if (sortField.value === "date") {
-      aValue = new Date(aValue).getTime();
-      bValue = new Date(bValue).getTime();
+      aValue = aValue !== undefined ? new Date(aValue).getTime() : 0;
+      bValue = bValue !== undefined ? new Date(bValue).getTime() : 0;
     } else {
       aValue = String(aValue).toLowerCase();
       bValue = String(bValue).toLowerCase();
@@ -145,7 +146,7 @@ function submitEdit() {
   closeModal();
 }
 
-function sortBy(by: "amount" | "category" | "description" | "date") {
+function sortBy(by: "amount" | "categoryId" | "description" | "date") {
   if (sortField.value == by) {
     sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
   } else {
@@ -196,7 +197,7 @@ function sortBy(by: "amount" | "category" | "description" | "date") {
     <thead>
       <tr>
         <th @click="sortBy('amount')" style="cursor: pointer">Amount</th>
-        <th @click="sortBy('category')" style="cursor: pointer">Category</th>
+        <th @click="sortBy('categoryId')" style="cursor: pointer">Category</th>
         <th @click="sortBy('description')" style="cursor: pointer">
           Description
         </th>
