@@ -9,12 +9,18 @@
         min="0"
         step="0.01"
         required
+        :disabled="disabled"
       />
     </div>
     <div>
       <label for="category">Category</label>
-      <select id="category" v-model="form.categoryId" required>
-        <option value="" disabled>Select category</option>
+      <select
+        id="category"
+        v-model.number="form.categoryId"
+        required
+        :disabled="disabled"
+      >
+        <option :value="null" disabled>Select category</option>
         <option v-for="cat in categories" :key="cat.id" :value="cat.id">
           {{ cat.name }}
         </option>
@@ -22,65 +28,89 @@
     </div>
     <div>
       <label for="description">Description</label>
-      <input id="description" v-model="form.description" type="text" required />
+      <input
+        id="description"
+        v-model="form.description"
+        type="text"
+        placeholder="Enter description"
+        required
+        :disabled="disabled"
+      />
     </div>
     <div v-if="error" class="error-message">
       {{ error }}
     </div>
-    <button type="submit" :disabled="!!error" :class="{ disabled: !!error }">
-      Add Transaction
+    <button
+      type="submit"
+      :disabled="disabled || !!error || !isFormValid"
+      :class="{ disabled: disabled || !!error || !isFormValid }"
+    >
+      {{ disabled ? "Adding..." : "Add Transaction" }}
     </button>
   </form>
 </template>
 
 <script setup lang="ts">
-import { validateTransaction } from "~/utils/validation";
 import type { Transaction, Category } from "~/types";
 
 const props = defineProps<{
   categories: Category[];
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: "add", tx: Transaction): void;
+  add: [
+    transaction: Pick<Transaction, "amount" | "categoryId" | "description">
+  ];
 }>();
 
-const form = ref<Partial<Transaction>>({
-  amount: undefined,
-  categoryId: undefined,
+const form = ref({
+  amount: 0,
+  categoryId: null as number | null,
   description: "",
 });
 
 const error = ref<string | null>(null);
 
+const isFormValid = computed(() => {
+  return (
+    form.value.amount > 0 &&
+    form.value.categoryId !== null &&
+    form.value.description.trim().length > 0
+  );
+});
+
 watch(
   form,
-  (newForm) => {
-    error.value = validateTransaction({
-      ...newForm,
-      date: new Date().toISOString(),
-    });
+  () => {
+    error.value = null;
+    // Валидация
+    if (form.value.amount <= 0) {
+      error.value = "Amount must be greater than 0";
+    } else if (!form.value.categoryId) {
+      error.value = "Please select a category";
+    } else if (!form.value.description.trim()) {
+      error.value = "Description is required";
+    }
   },
-  { deep: true, immediate: true }
+  { deep: true }
 );
 
 function submitForm() {
-  error.value = validateTransaction({
-    ...form.value,
-    date: new Date().toISOString(),
-  });
-  if (error.value) return;
-  const tx: Transaction = {
-    id: Date.now(),
-    amount: Number(form.value.amount),
-    categoryId: Number(form.value.categoryId),
-    date: new Date().toISOString(),
-    description: form.value.description!.trim(),
+  if (!isFormValid.value || error.value) return;
+
+  const transaction = {
+    amount: form.value.amount,
+    categoryId: form.value.categoryId!,
+    description: form.value.description.trim(),
   };
-  emit("add", tx);
+
+  emit("add", transaction);
+
+  // Reset form
   form.value = {
-    amount: undefined,
-    categoryId: undefined,
+    amount: 0,
+    categoryId: null,
     description: "",
   };
 }
@@ -92,10 +122,44 @@ function submitForm() {
   flex-direction: column;
   gap: 1rem;
 }
+
+.transaction-form div {
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-form label {
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.transaction-form input,
+.transaction-form select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
 .error-message {
   color: red;
-  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
 }
+
+button {
+  padding: 0.75rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button:hover:not(.disabled) {
+  background: #2563eb;
+}
+
 button.disabled {
   background: #ccc;
   color: #888;

@@ -1,13 +1,17 @@
 export interface Category {
   id: number;
   name: string;
-  color?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Transaction {
   id: number;
   amount: number;
-  categoryId: number;
+  description: string;
   date: string;
-  description?: string;
+  categoryId: number;
+  createdAt?: string;
+  updatedAt?: string;
+  category?: Category;
 }

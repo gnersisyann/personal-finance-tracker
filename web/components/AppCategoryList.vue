@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const emit = defineEmits(["selectionChanged"]);
 
-const { categories, updateCategory } = useCategories();
+const { categories, updateCategory, isLoading, error } = useCategories();
 
 const search = ref("");
 const selectedIds = ref<number[]>([]);
@@ -28,11 +28,15 @@ function startEdit(catId: number, name: string) {
   editingName.value = name;
 }
 
-function saveEdit(catId: number) {
+async function saveEdit(catId: number) {
   if (editingName.value.trim()) {
-    updateCategory(catId, { id: catId, name: editingName.value.trim() });
-    editingId.value = null;
-    editingName.value = "";
+    try {
+      await updateCategory(catId, { name: editingName.value.trim() }); // Исправлено
+      editingId.value = null;
+      editingName.value = "";
+    } catch (err) {
+      console.error("Failed to update category:", err);
+    }
   }
 }
 
@@ -43,55 +47,67 @@ function cancelEdit() {
 </script>
 
 <template>
-  <div style="margin-bottom: 16px">
-    <label>
-      Search:
-      <input type="text" v-model="search" placeholder="Category name..." />
-    </label>
-  </div>
-  <table v-if="filteredCategories.length" border="1">
-    <thead>
-      <tr>
-        <th></th>
-        <th>Name</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="cat in filteredCategories" :key="cat.id">
-        <td>
-          <input
-            type="checkbox"
-            :value="cat.id"
-            :checked="selectedIds.includes(cat.id)"
-            @change="toggleSelect(cat.id)"
-          />
-        </td>
-        <td>
-          <template v-if="editingId === cat.id">
-            <input v-model="editingName" @keyup.enter="saveEdit(cat.id)" />
-          </template>
-          <template v-else>
-            {{ cat.name }}
-          </template>
-        </td>
-        <td>
-          <template v-if="editingId === cat.id">
-            <button @click="saveEdit(cat.id)">Save</button>
-            <button @click="cancelEdit">Cancel</button>
-          </template>
-          <template v-else>
-            <button @click="startEdit(cat.id, cat.name)">Edit</button>
-          </template>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <div
-    class="no-data"
-    v-else
-    style="text-align: center; color: #888; margin: 24px 0"
-  >
-    No categories to display
+  <div>
+    <div v-if="isLoading" style="text-align: center; padding: 20px">
+      Loading categories...
+    </div>
+
+    <div v-if="error" style="color: red; margin-bottom: 12px">
+      Error: {{ error }}
+    </div>
+
+    <div v-if="!isLoading" style="margin-bottom: 16px">
+      <label>
+        Search:
+        <input type="text" v-model="search" placeholder="Category name..." />
+      </label>
+    </div>
+
+    <table v-if="filteredCategories.length && !isLoading" border="1">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="cat in filteredCategories" :key="cat.id">
+          <td>
+            <input
+              type="checkbox"
+              :value="cat.id"
+              :checked="selectedIds.includes(cat.id)"
+              @change="toggleSelect(cat.id)"
+            />
+          </td>
+          <td>
+            <template v-if="editingId === cat.id">
+              <input v-model="editingName" @keyup.enter="saveEdit(cat.id)" />
+            </template>
+            <template v-else>
+              {{ cat.name }}
+            </template>
+          </td>
+          <td>
+            <template v-if="editingId === cat.id">
+              <button @click="saveEdit(cat.id)">Save</button>
+              <button @click="cancelEdit">Cancel</button>
+            </template>
+            <template v-else>
+              <button @click="startEdit(cat.id, cat.name)">Edit</button>
+            </template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div
+      class="no-data"
+      v-else-if="!isLoading && !filteredCategories.length"
+      style="text-align: center; color: #888; margin: 24px 0"
+    >
+      No categories to display
+    </div>
   </div>
 </template>

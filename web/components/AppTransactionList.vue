@@ -1,12 +1,27 @@
 <script setup lang="ts">
-import type { Transaction } from '~/types';
+import type { Transaction } from "~/types";
+
 const props = defineProps({
   selectedCategory: {
     type: [Number, null],
     default: null,
   },
 });
-const { categories, getCategory } = useCategories();
+
+const {
+  categories,
+  getCategory,
+  isLoading: categoriesLoading,
+  error: categoriesError,
+} = useCategories();
+const {
+  transactions,
+  removeTransaction,
+  updateTransaction,
+  isLoading: transactionsLoading,
+  error: transactionsError,
+  loadTransactions,
+} = useTransactions();
 
 const startDate = ref<string>("");
 const endDate = ref<string>("");
@@ -21,6 +36,11 @@ const editingTransaction = ref<Transaction | null>(null);
 const error = ref("");
 
 const search = ref("");
+const isSubmitting = ref(false);
+
+onMounted(async () => {
+  await loadTransactions();
+});
 
 function openEditModal(transaction: Transaction) {
   editingTransaction.value = { ...transaction };
@@ -30,6 +50,7 @@ function openEditModal(transaction: Transaction) {
 function closeModal() {
   isModalOpen.value = false;
   editingTransaction.value = null;
+  error.value = "";
 }
 
 const confirmDeleteId = ref<number | null>(null);
@@ -38,17 +59,20 @@ function askDelete(id: number) {
   confirmDeleteId.value = id;
 }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (confirmDeleteId.value !== null) {
-    removeTransaction(confirmDeleteId.value);
-    confirmDeleteId.value = null;
+    try {
+      await removeTransaction(confirmDeleteId.value);
+      confirmDeleteId.value = null;
+    } catch (err) {
+      console.error("Failed to delete transaction:", err);
+    }
   }
 }
 
 function cancelDelete() {
   confirmDeleteId.value = null;
 }
-const { transactions, removeTransaction } = useTransactions();
 
 const filteredTransactions = computed(() =>
   selectedCategory.value == null
@@ -58,12 +82,12 @@ const filteredTransactions = computed(() =>
 
 const searchedTransactions = computed(() =>
   filteredTransactions.value.filter((t) =>
-    t.description && t.description.toLowerCase().includes(search.value.trim().toLowerCase())
+    t.description.toLowerCase().includes(search.value.trim().toLowerCase())
   )
 );
 
 const sortField = ref<"amount" | "categoryId" | "description" | "date">("date");
-const sortDirection = ref<"asc" | "desc">("asc");
+const sortDirection = ref<"asc" | "desc">("desc");
 
 const dateFilteredTransactions = computed(() => {
   return searchedTransactions.value.filter((t) => {
@@ -104,46 +128,26 @@ const sortedTransactions = computed(() => {
   return arr;
 });
 
-watch(
-  () => editingTransaction.value,
-  (val) => {
-    if (!val) {
-      error.value = "";
-      return;
-    }
+async function submitEdit() {
+  if (!editingTransaction.value) return;
 
-    if (val.amount === null || isNaN(val.amount)) {
-      error.value = "Amount must be a number";
-      return;
-    }
-
-    if (val.amount <= 0) {
-      error.value = "Invalid amount (must be positive)";
-      return;
-    }
-
-    if (!val.description || val.description.trim() === "") {
-      error.value = "Description is required";
-      return;
-    }
-
+  try {
+    isSubmitting.value = true;
     error.value = "";
-  },
-  { deep: true }
-);
 
-function submitEdit() {
-  if (!editingTransaction.value || error.value != "") return;
-  const idx = transactions.value.findIndex(
-    (t) => editingTransaction.value && t.id === editingTransaction.value.id
-  );
-  if (idx !== -1) {
-    transactions.value[idx] = {
-      ...transactions.value[idx],
-      ...editingTransaction.value,
-    };
+    await updateTransaction(editingTransaction.value.id, {
+      amount: editingTransaction.value.amount,
+      categoryId: editingTransaction.value.categoryId,
+      description: editingTransaction.value.description,
+    });
+
+    closeModal();
+  } catch (err) {
+    error.value =
+      err instanceof Error ? err.message : "Failed to update transaction";
+  } finally {
+    isSubmitting.value = false;
   }
-  closeModal();
 }
 
 function sortBy(by: "amount" | "categoryId" | "description" | "date") {
@@ -151,136 +155,168 @@ function sortBy(by: "amount" | "categoryId" | "description" | "date") {
     sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
   } else {
     sortField.value = by;
-    sortDirection.value = "asc";
+    sortDirection.value = by === "date" ? "desc" : "asc";
   }
 }
 </script>
 
 <template>
-  <div style="margin-bottom: 16px">
-    <button @click="showFilter = !showFilter" style="margin-right: 8px">
-      Filter
-    </button>
-    <button @click="showSearch = !showSearch">Search</button>
-  </div>
-
-  <div v-if="showFilter" style="margin-bottom: 12px">
-    <label>
-      Category:
-      <select v-model="selectedCategory">
-        <option :value="null">All categories</option>
-        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-          {{ cat.name }}
-        </option>
-      </select>
-    </label>
-    <label style="margin-left: 16px">
-      Start date:
-      <input type="date" v-model="startDate" />
-    </label>
-    <label style="margin-left: 12px">
-      End date:
-      <input type="date" v-model="endDate" />
-    </label>
-  </div>
-
-  <div v-if="showSearch" style="margin-bottom: 12px">
-    <input
-      type="text"
-      v-model="search"
-      placeholder="Description..."
-      style="width: 200px"
-    />
-  </div>
-
-  <table v-if="sortedTransactions.length" border="1">
-    <thead>
-      <tr>
-        <th @click="sortBy('amount')" style="cursor: pointer">Amount</th>
-        <th @click="sortBy('categoryId')" style="cursor: pointer">Category</th>
-        <th @click="sortBy('description')" style="cursor: pointer">
-          Description
-        </th>
-        <th @click="sortBy('date')" style="cursor: pointer">Date</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="transaction in sortedTransactions" :key="transaction.id">
-        <td>{{ transaction.amount }}</td>
-        <td>{{ getCategory(transaction.categoryId) }}</td>
-        <td>{{ transaction.description }}</td>
-        <td>{{ new Date(transaction.date).toLocaleString() }}</td>
-        <td>
-          <button @click="askDelete(transaction.id)">Delete</button>
-          <button v-if="!isModalOpen" @click="openEditModal(transaction)">
-            Edit
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <div
-    class="no-data"
-    v-else
-    style="text-align: center; color: #888; margin: 24px 0"
-  >
-    No transactions to display.
-  </div>
-  <div v-if="confirmDeleteId !== null" class="modal">
-    <div>
-      <p>Are you sure you want to delete this transaction?</p>
-      <button @click="confirmDelete">Yes</button>
-      <button @click="cancelDelete">No</button>
+  <div>
+    <div
+      v-if="transactionsLoading || categoriesLoading"
+      style="text-align: center; padding: 20px"
+    >
+      Loading...
     </div>
-  </div>
-  <div v-if="isModalOpen && editingTransaction" class="modal">
-    <form @submit.prevent="submitEdit" class="modal-content">
-      <h3>Edit Transaction</h3>
-      <div>
-        <input
-          v-model.number="editingTransaction.amount"
-          placeholder="Amount"
-        />
-      </div>
-      <div>
-        <select v-model.number="editingTransaction.categoryId">
-          <option :value="null" disabled>Category</option>
+
+    <div v-if="transactionsError" style="color: red; margin-bottom: 16px">
+      Error loading transactions: {{ transactionsError }}
+      <button @click="loadTransactions()" style="margin-left: 8px">
+        Retry
+      </button>
+    </div>
+
+    <div v-if="categoriesError" style="color: red; margin-bottom: 16px">
+      Error loading categories: {{ categoriesError }}
+    </div>
+
+    <div style="margin-bottom: 16px">
+      <button @click="showFilter = !showFilter" style="margin-right: 8px">
+        Filter
+      </button>
+      <button @click="showSearch = !showSearch">Search</button>
+    </div>
+
+    <div v-if="showFilter" style="margin-bottom: 12px">
+      <label>
+        Category:
+        <select v-model="selectedCategory">
+          <option :value="null">All categories</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </option>
         </select>
+      </label>
+      <label style="margin-left: 16px">
+        Start date:
+        <input type="date" v-model="startDate" />
+      </label>
+      <label style="margin-left: 12px">
+        End date:
+        <input type="date" v-model="endDate" />
+      </label>
+    </div>
+
+    <div v-if="showSearch" style="margin-bottom: 12px">
+      <input
+        type="text"
+        v-model="search"
+        placeholder="Description..."
+        style="width: 200px"
+      />
+    </div>
+
+    <table v-if="sortedTransactions.length" border="1">
+      <thead>
+        <tr>
+          <th @click="sortBy('amount')" style="cursor: pointer">Amount</th>
+          <th @click="sortBy('categoryId')" style="cursor: pointer">
+            Category
+          </th>
+          <th @click="sortBy('description')" style="cursor: pointer">
+            Description
+          </th>
+          <th @click="sortBy('date')" style="cursor: pointer">Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="transaction in sortedTransactions" :key="transaction.id">
+          <td>{{ transaction.amount }}</td>
+          <td>{{ getCategory(transaction.categoryId) }}</td>
+          <td>{{ transaction.description }}</td>
+          <td>{{ new Date(transaction.date).toLocaleString() }}</td>
+          <td>
+            <button
+              @click="askDelete(transaction.id)"
+              :disabled="transactionsLoading"
+            >
+              Delete
+            </button>
+            <button
+              v-if="!isModalOpen"
+              @click="openEditModal(transaction)"
+              :disabled="transactionsLoading"
+            >
+              Edit
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div
+      class="no-data"
+      v-else-if="!transactionsLoading"
+      style="text-align: center; color: #888; margin: 24px 0"
+    >
+      No transactions to display.
+    </div>
+
+    <div v-if="confirmDeleteId !== null" class="modal">
+      <div class="modal-content">
+        <p>Are you sure you want to delete this transaction?</p>
+        <div>
+          <button @click="confirmDelete" :disabled="transactionsLoading">
+            Yes
+          </button>
+          <button @click="cancelDelete">No</button>
+        </div>
       </div>
-      <div>
-        <input
-          v-model="editingTransaction.description"
-          placeholder="Description"
-        />
-      </div>
-      <button type="submit">Submit</button>
-      <button type="button" @click="closeModal">Cancel</button>
-      <div v-if="error" style="color: red; margin-top: 8px">{{ error }}</div>
-    </form>
+    </div>
+
+    <div v-if="isModalOpen && editingTransaction" class="modal">
+      <form @submit.prevent="submitEdit" class="modal-content">
+        <h3>Edit Transaction</h3>
+        <div>
+          <label>Amount</label>
+          <input
+            v-model.number="editingTransaction.amount"
+            placeholder="Amount"
+            type="number"
+            step="0.01"
+            min="0"
+            required
+          />
+        </div>
+        <div>
+          <label>Category</label>
+          <select v-model.number="editingTransaction.categoryId" required>
+            <option :value="null" disabled>Category</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+              {{ cat.name }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label>Description</label>
+          <input
+            v-model="editingTransaction.description"
+            placeholder="Description"
+            required
+            minlength="2"
+          />
+        </div>
+        <div>
+          <button type="submit" :disabled="isSubmitting">
+            {{ isSubmitting ? "Saving..." : "Save" }}
+          </button>
+          <button type="button" @click="closeModal" :disabled="isSubmitting">
+            Cancel
+          </button>
+        </div>
+        <div v-if="error" style="color: red; margin-top: 8px">{{ error }}</div>
+      </form>
+    </div>
   </div>
 </template>
-
-<style>
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-.modal-content {
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  min-width: 300px;
-}
-</style>
