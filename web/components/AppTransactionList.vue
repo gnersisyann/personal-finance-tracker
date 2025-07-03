@@ -1,322 +1,250 @@
 <script setup lang="ts">
-import type { Transaction } from "~/types";
+const { transactions, isLoading, error, loadTransactions } = useTransactions();
+const { categories, loadCategories } = useCategories();
 
-const props = defineProps({
-  selectedCategory: {
-    type: [Number, null],
-    default: null,
+// Состояние фильтров
+const filters = ref({
+  search: "",
+  categoryId: null as number | null,
+  startDate: "",
+  endDate: "",
+});
+
+// Состояние сортировки
+const sortOrder = ref<string[]>([]);
+
+// Заголовки таблицы
+const headers = [
+  {
+    title: "Дата",
+    valueTemplate: "{{formattedDate}}",
+    sortable: true,
   },
+  {
+    title: "Описание",
+    valueTemplate: "{{description}}",
+    sortable: true,
+  },
+  {
+    title: "Категория",
+    valueTemplate: "{{category.name}}",
+    sortable: false,
+  },
+  {
+    title: "Сумма",
+    valueTemplate: "{{amount}} ₽",
+    sortable: true,
+  },
+];
+
+// Вычисляемые свойства для фильтрации
+const filteredTransactions = computed(() => {
+  let result = [...transactions.value];
+
+  // Фильтр по поиску
+  if (filters.value.search.trim()) {
+    const search = filters.value.search.toLowerCase();
+    result = result.filter(
+      (t) =>
+        t.description.toLowerCase().includes(search) ||
+        t.category?.name.toLowerCase().includes(search)
+    );
+  }
+
+  // Фильтр по категории
+  if (filters.value.categoryId) {
+    result = result.filter((t) => t.categoryId === filters.value.categoryId);
+  }
+
+  // Фильтр по датам
+  if (filters.value.startDate) {
+    const startDate = new Date(filters.value.startDate);
+    result = result.filter((t) => new Date(t.date) >= startDate);
+  }
+
+  if (filters.value.endDate) {
+    const endDate = new Date(filters.value.endDate);
+    endDate.setHours(23, 59, 59, 999);
+    result = result.filter((t) => new Date(t.date) <= endDate);
+  }
+
+  return result;
 });
 
-const {
-  categories,
-  getCategory,
-  isLoading: categoriesLoading,
-  error: categoriesError,
-} = useCategories();
-const {
-  transactions,
-  removeTransaction,
-  updateTransaction,
-  isLoading: transactionsLoading,
-  error: transactionsError,
-  loadTransactions,
-} = useTransactions();
+// Подготовка данных для таблицы с форматированной датой
+const tableData = computed(() => {
+  return filteredTransactions.value.map((transaction) => ({
+    ...transaction,
+    formattedDate: new Date(transaction.date).toLocaleDateString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  }));
+});
 
-const startDate = ref<string>("");
-const endDate = ref<string>("");
+// Опции для фильтра категорий
+const categoryOptions = computed(() =>
+  categories.value.map((cat) => ({
+    text: cat.name,
+    value: cat.id,
+  }))
+);
 
-const showFilter = ref(false);
-const showSearch = ref(false);
-
-const selectedCategory = ref<number | null>(null);
-
-const isModalOpen = ref(false);
-const editingTransaction = ref<Transaction | null>(null);
-const error = ref("");
-
-const search = ref("");
-const isSubmitting = ref(false);
-
+// Загрузка данных при монтировании
 onMounted(async () => {
+  await Promise.all([loadCategories(), loadTransactions()]);
+});
+
+// Функция сброса фильтров
+function resetFilters() {
+  filters.value = {
+    search: "",
+    categoryId: null,
+    startDate: "",
+    endDate: "",
+  };
+}
+
+// Функция обновления данных
+async function refreshData() {
   await loadTransactions();
-});
-
-function openEditModal(transaction: Transaction) {
-  editingTransaction.value = { ...transaction };
-  isModalOpen.value = true;
-}
-
-function closeModal() {
-  isModalOpen.value = false;
-  editingTransaction.value = null;
-  error.value = "";
-}
-
-const confirmDeleteId = ref<number | null>(null);
-
-function askDelete(id: number) {
-  confirmDeleteId.value = id;
-}
-
-async function confirmDelete() {
-  if (confirmDeleteId.value !== null) {
-    try {
-      await removeTransaction(confirmDeleteId.value);
-      confirmDeleteId.value = null;
-    } catch (err) {
-      console.error("Failed to delete transaction:", err);
-    }
-  }
-}
-
-function cancelDelete() {
-  confirmDeleteId.value = null;
-}
-
-const filteredTransactions = computed(() =>
-  selectedCategory.value == null
-    ? transactions.value
-    : transactions.value.filter((t) => t.categoryId === selectedCategory.value)
-);
-
-const searchedTransactions = computed(() =>
-  filteredTransactions.value.filter((t) =>
-    t.description.toLowerCase().includes(search.value.trim().toLowerCase())
-  )
-);
-
-const sortField = ref<"amount" | "categoryId" | "description" | "date">("date");
-const sortDirection = ref<"asc" | "desc">("desc");
-
-const dateFilteredTransactions = computed(() => {
-  return searchedTransactions.value.filter((t) => {
-    const tDate = new Date(t.date).setHours(0, 0, 0, 0);
-    const start = startDate.value
-      ? new Date(startDate.value).setHours(0, 0, 0, 0)
-      : null;
-    const end = endDate.value
-      ? new Date(endDate.value).setHours(0, 0, 0, 0)
-      : null;
-    if (start && tDate < start) return false;
-    if (end && tDate > end) return false;
-    return true;
-  });
-});
-
-const sortedTransactions = computed(() => {
-  const arr = [...dateFilteredTransactions.value];
-  arr.sort((a, b) => {
-    let aValue = a[sortField.value];
-    let bValue = b[sortField.value];
-
-    if (sortField.value === "categoryId" || sortField.value === "amount") {
-      aValue = Number(aValue);
-      bValue = Number(bValue);
-    } else if (sortField.value === "date") {
-      aValue = aValue !== undefined ? new Date(aValue).getTime() : 0;
-      bValue = bValue !== undefined ? new Date(bValue).getTime() : 0;
-    } else {
-      aValue = String(aValue).toLowerCase();
-      bValue = String(bValue).toLowerCase();
-    }
-
-    if (aValue < bValue) return sortDirection.value === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection.value === "asc" ? 1 : -1;
-    return 0;
-  });
-  return arr;
-});
-
-async function submitEdit() {
-  if (!editingTransaction.value) return;
-
-  try {
-    isSubmitting.value = true;
-    error.value = "";
-
-    await updateTransaction(editingTransaction.value.id, {
-      amount: editingTransaction.value.amount,
-      categoryId: editingTransaction.value.categoryId,
-      description: editingTransaction.value.description,
-    });
-
-    closeModal();
-  } catch (err) {
-    error.value =
-      err instanceof Error ? err.message : "Failed to update transaction";
-  } finally {
-    isSubmitting.value = false;
-  }
-}
-
-function sortBy(by: "amount" | "categoryId" | "description" | "date") {
-  if (sortField.value == by) {
-    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-  } else {
-    sortField.value = by;
-    sortDirection.value = by === "date" ? "desc" : "asc";
-  }
 }
 </script>
 
 <template>
-  <div>
-    <div
-      v-if="transactionsLoading || categoriesLoading"
-      style="text-align: center; padding: 20px"
-    >
-      Loading...
-    </div>
+  <HenaketCard class="p-6">
+    <div class="flex flex-col gap-6">
+      <!-- Заголовок -->
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-800">Транзакции</h2>
 
-    <div v-if="transactionsError" style="color: red; margin-bottom: 16px">
-      Error loading transactions: {{ transactionsError }}
-      <button @click="loadTransactions()" style="margin-left: 8px">
-        Retry
-      </button>
-    </div>
+        <HenaketButton
+          variant="outlined"
+          @click="refreshData"
+          :disabled="isLoading"
+        >
+          <HenaketIcon icon="refresh" size="16px" class="mr-2" />
+          Обновить
+        </HenaketButton>
+      </div>
 
-    <div v-if="categoriesError" style="color: red; margin-bottom: 16px">
-      Error loading categories: {{ categoriesError }}
-    </div>
+      <!-- Фильтры -->
+      <HenaketCard class="p-4" staticDisplay>
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-700">Фильтры</h3>
 
-    <div style="margin-bottom: 16px">
-      <button @click="showFilter = !showFilter" style="margin-right: 8px">
-        Filter
-      </button>
-      <button @click="showSearch = !showSearch">Search</button>
-    </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Поиск -->
+            <HenaketInputField
+              v-model="filters.search"
+              label="Поиск"
+              type="text"
+              placeholder="Поиск по описанию..."
+            />
 
-    <div v-if="showFilter" style="margin-bottom: 12px">
-      <label>
-        Category:
-        <select v-model="selectedCategory">
-          <option :value="null">All categories</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-      </label>
-      <label style="margin-left: 16px">
-        Start date:
-        <input type="date" v-model="startDate" />
-      </label>
-      <label style="margin-left: 12px">
-        End date:
-        <input type="date" v-model="endDate" />
-      </label>
-    </div>
+            <!-- Фильтр категорий -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Категория
+              </label>
+              <HenaketFilters
+                v-model="filters.categoryId"
+                :items="categoryOptions"
+                :multiple="false"
+              />
+            </div>
 
-    <div v-if="showSearch" style="margin-bottom: 12px">
-      <input
-        type="text"
-        v-model="search"
-        placeholder="Description..."
-        style="width: 200px"
+            <!-- Дата начала -->
+            <HenaketInputField
+              v-model="filters.startDate"
+              label="Дата с"
+              type="date"
+            />
+
+            <!-- Дата окончания -->
+            <HenaketInputField
+              v-model="filters.endDate"
+              label="Дата по"
+              type="date"
+            />
+          </div>
+
+          <!-- Кнопка сброса фильтров -->
+          <div class="flex justify-end">
+            <HenaketButton variant="outlined" @click="resetFilters">
+              <HenaketIcon icon="clear" size="16px" class="mr-2" />
+              Сбросить фильтры
+            </HenaketButton>
+          </div>
+        </div>
+      </HenaketCard>
+
+      <!-- Уведомление об ошибке -->
+      <HenaketAlert
+        v-if="error"
+        variant="error"
+        icon="error"
+        title="Ошибка загрузки транзакций"
+        :content="error"
       />
-    </div>
 
-    <table v-if="sortedTransactions.length" border="1">
-      <thead>
-        <tr>
-          <th @click="sortBy('amount')" style="cursor: pointer">Amount</th>
-          <th @click="sortBy('categoryId')" style="cursor: pointer">
-            Category
-          </th>
-          <th @click="sortBy('description')" style="cursor: pointer">
-            Description
-          </th>
-          <th @click="sortBy('date')" style="cursor: pointer">Date</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="transaction in sortedTransactions" :key="transaction.id">
-          <td>{{ transaction.amount }}</td>
-          <td>{{ getCategory(transaction.categoryId) }}</td>
-          <td>{{ transaction.description }}</td>
-          <td>{{ new Date(transaction.date).toLocaleString() }}</td>
-          <td>
-            <button
-              @click="askDelete(transaction.id)"
-              :disabled="transactionsLoading"
-            >
-              Delete
-            </button>
-            <button
-              v-if="!isModalOpen"
-              @click="openEditModal(transaction)"
-              :disabled="transactionsLoading"
-            >
-              Edit
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <!-- Загрузка -->
+      <div v-if="isLoading" class="flex justify-center py-8">
+        <HenaketLoadingSpinner />
+      </div>
 
-    <div
-      class="no-data"
-      v-else-if="!transactionsLoading"
-      style="text-align: center; color: #888; margin: 24px 0"
-    >
-      No transactions to display.
-    </div>
+      <!-- Таблица транзакций -->
+      <div v-else-if="tableData.length">
+        <HenaketDataTable
+          v-model:sort="sortOrder"
+          :headers="headers"
+          :items="tableData"
+          :disabled="isLoading"
+          stickyHeader
+        />
 
-    <div v-if="confirmDeleteId !== null" class="modal">
-      <div class="modal-content">
-        <p>Are you sure you want to delete this transaction?</p>
-        <div>
-          <button @click="confirmDelete" :disabled="transactionsLoading">
-            Yes
-          </button>
-          <button @click="cancelDelete">No</button>
+        <!-- Статистика -->
+        <div class="mt-4 text-sm text-gray-600">
+          Показано {{ tableData.length }} из
+          {{ transactions.length }} транзакций
         </div>
       </div>
-    </div>
 
-    <div v-if="isModalOpen && editingTransaction" class="modal">
-      <form @submit.prevent="submitEdit" class="modal-content">
-        <h3>Edit Transaction</h3>
-        <div>
-          <label>Amount</label>
-          <input
-            v-model.number="editingTransaction.amount"
-            placeholder="Amount"
-            type="number"
-            step="0.01"
-            min="0"
-            required
-          />
-        </div>
-        <div>
-          <label>Category</label>
-          <select v-model.number="editingTransaction.categoryId" required>
-            <option :value="null" disabled>Category</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-              {{ cat.name }}
-            </option>
-          </select>
-        </div>
-        <div>
-          <label>Description</label>
-          <input
-            v-model="editingTransaction.description"
-            placeholder="Description"
-            required
-            minlength="2"
-          />
-        </div>
-        <div>
-          <button type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? "Saving..." : "Save" }}
-          </button>
-          <button type="button" @click="closeModal" :disabled="isSubmitting">
-            Cancel
-          </button>
-        </div>
-        <div v-if="error" style="color: red; margin-top: 8px">{{ error }}</div>
-      </form>
+      <!-- Пустое состояние -->
+      <div v-else class="text-center py-12">
+        <HenaketIcon
+          icon="receipt_long"
+          size="48px"
+          class="mb-4 text-gray-400"
+        />
+        <h3 class="text-lg font-medium text-gray-700 mb-2">Нет транзакций</h3>
+        <p class="text-gray-500 mb-4">
+          {{
+            filters.search ||
+            filters.categoryId ||
+            filters.startDate ||
+            filters.endDate
+              ? "По заданным фильтрам транзакции не найдены"
+              : "Добавьте первую транзакцию для начала работы"
+          }}
+        </p>
+
+        <HenaketButton
+          v-if="
+            filters.search ||
+            filters.categoryId ||
+            filters.startDate ||
+            filters.endDate
+          "
+          variant="outlined"
+          @click="resetFilters"
+        >
+          Сбросить фильтры
+        </HenaketButton>
+      </div>
     </div>
-  </div>
+  </HenaketCard>
 </template>

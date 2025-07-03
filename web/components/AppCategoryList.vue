@@ -31,11 +31,11 @@ function startEdit(catId: number, name: string) {
 async function saveEdit(catId: number) {
   if (editingName.value.trim()) {
     try {
-      await updateCategory(catId, { name: editingName.value.trim() }); // Исправлено
+      await updateCategory(catId, { name: editingName.value.trim() });
       editingId.value = null;
       editingName.value = "";
-    } catch (err) {
-      console.error("Failed to update category:", err);
+    } catch (error) {
+      console.error("Failed to update category:", error);
     }
   }
 }
@@ -47,67 +47,98 @@ function cancelEdit() {
 </script>
 
 <template>
-  <div>
-    <div v-if="isLoading" style="text-align: center; padding: 20px">
-      Loading categories...
-    </div>
+  <HenaketCard class="p-6">
+    <div class="flex flex-col gap-4">
+      <h2 class="text-xl font-semibold text-gray-800">Категории</h2>
 
-    <div v-if="error" style="color: red; margin-bottom: 12px">
-      Error: {{ error }}
-    </div>
+      <!-- Поиск -->
+      <HenaketInputField
+        v-model="search"
+        label="Поиск категорий"
+        type="text"
+        placeholder="Введите название категории..."
+      />
 
-    <div v-if="!isLoading" style="margin-bottom: 16px">
-      <label>
-        Search:
-        <input type="text" v-model="search" placeholder="Category name..." />
-      </label>
-    </div>
+      <!-- Уведомление об ошибке -->
+      <HenaketAlert
+        v-if="error"
+        variant="error"
+        icon="error"
+        title="Ошибка"
+        :content="error"
+      />
 
-    <table v-if="filteredCategories.length && !isLoading" border="1">
-      <thead>
-        <tr>
-          <th></th>
-          <th>Name</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="cat in filteredCategories" :key="cat.id">
-          <td>
-            <input
-              type="checkbox"
-              :value="cat.id"
-              :checked="selectedIds.includes(cat.id)"
-              @change="toggleSelect(cat.id)"
-            />
-          </td>
-          <td>
-            <template v-if="editingId === cat.id">
-              <input v-model="editingName" @keyup.enter="saveEdit(cat.id)" />
-            </template>
-            <template v-else>
-              {{ cat.name }}
-            </template>
-          </td>
-          <td>
-            <template v-if="editingId === cat.id">
-              <button @click="saveEdit(cat.id)">Save</button>
-              <button @click="cancelEdit">Cancel</button>
-            </template>
-            <template v-else>
-              <button @click="startEdit(cat.id, cat.name)">Edit</button>
-            </template>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <!-- Загрузка -->
+      <div v-if="isLoading" class="flex justify-center py-8">
+        <HenaketLoadingSpinner />
+      </div>
 
-    <div
-      class="no-data"
-      v-else-if="!isLoading && !filteredCategories.length"
-      style="text-align: center; color: #888; margin: 24px 0"
-    >
-      No categories to display
+      <!-- Список категорий -->
+      <div v-else class="space-y-2">
+        <HenaketCard
+          v-for="category in filteredCategories"
+          :key="category.id"
+          class="p-4"
+          staticDisplay
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <HenaketCheckbox
+                :name="`category-${category.id}`"
+                :value="category.id.toString()"
+                :modelValue="selectedIds.includes(category.id)"
+                @update:modelValue="toggleSelect(category.id)"
+              />
+
+              <div
+                v-if="editingId === category.id"
+                class="flex items-center gap-2"
+              >
+                <HenaketInputField
+                  v-model="editingName"
+                  type="text"
+                  class="min-w-0"
+                />
+                <HenaketButton
+                  variant="primary"
+                  size="regular"
+                  @click="saveEdit(category.id)"
+                >
+                  <HenaketIcon icon="check" size="16px" />
+                </HenaketButton>
+                <HenaketButton
+                  variant="outlined"
+                  size="regular"
+                  @click="cancelEdit"
+                >
+                  <HenaketIcon icon="close" size="16px" />
+                </HenaketButton>
+              </div>
+
+              <span v-else class="text-gray-800 font-medium">
+                {{ category.name }}
+              </span>
+            </div>
+
+            <HenaketButton
+              v-if="editingId !== category.id"
+              variant="icon"
+              @click="startEdit(category.id, category.name)"
+            >
+              <HenaketIcon icon="edit" size="16px" />
+            </HenaketButton>
+          </div>
+        </HenaketCard>
+
+        <!-- Сообщение об отсутствии данных -->
+        <div
+          v-if="!filteredCategories.length"
+          class="text-center py-8 text-gray-500"
+        >
+          <HenaketIcon icon="folder_open" size="48px" class="mb-2" />
+          <p>Категории не найдены</p>
+        </div>
+      </div>
     </div>
-  </div>
+  </HenaketCard>
 </template>
