@@ -76,7 +76,7 @@ export async function updateCategory(
 
 export function useCategories() {
   return {
-    categories: readonly(categories),
+    categories,
     isLoading: readonly(isLoading),
     error: readonly(error),
     loadCategories,

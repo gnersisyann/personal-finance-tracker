@@ -1,3 +1,41 @@
+<script setup lang="ts">
+import { ref } from "vue";
+import AppTransactionForm from "./AppTransactionForm.vue";
+import AppTransactionList from "./AppTransactionList.vue";
+import { useCategories } from "~/composables/useCategories";
+import { useTransactions } from "~/composables/useTransactions";
+import type { Transaction } from "~/types";
+
+const showModal = ref(false);
+const isSubmitting = ref(false);
+
+const {
+  categories,
+  isLoading: categoriesLoading,
+  error: categoriesError,
+  loadCategories,
+} = useCategories();
+const { addTransaction, error: transactionsError } = useTransactions();
+
+onMounted(async () => {
+  await loadCategories();
+});
+
+async function handleAdd(
+  tx: Pick<Transaction, "amount" | "categoryId" | "description">
+) {
+  try {
+    isSubmitting.value = true;
+    await addTransaction(tx);
+    showModal.value = false;
+  } catch (err) {
+    console.error("Failed to add transaction:", err);
+  } finally {
+    isSubmitting.value = false;
+  }
+}
+</script>
+
 <template>
   <div>
     <div v-if="categoriesLoading" style="color: #6366f1; margin-bottom: 12px">
@@ -42,44 +80,6 @@
     <AppTransactionList />
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from "vue";
-import AppTransactionForm from "./AppTransactionForm.vue";
-import AppTransactionList from "./AppTransactionList.vue";
-import { useCategories } from "~/composables/useCategories";
-import { useTransactions } from "~/composables/useTransactions";
-import type { Transaction } from "~/types";
-
-const showModal = ref(false);
-const isSubmitting = ref(false);
-
-const {
-  categories,
-  isLoading: categoriesLoading,
-  error: categoriesError,
-  loadCategories,
-} = useCategories();
-const { addTransaction, error: transactionsError } = useTransactions();
-
-onMounted(async () => {
-  await loadCategories();
-});
-
-async function handleAdd(
-  tx: Pick<Transaction, "amount" | "categoryId" | "description">
-) {
-  try {
-    isSubmitting.value = true;
-    await addTransaction(tx);
-    showModal.value = false;
-  } catch (err) {
-    console.error("Failed to add transaction:", err);
-  } finally {
-    isSubmitting.value = false;
-  }
-}
-</script>
 
 <style>
 .modal {

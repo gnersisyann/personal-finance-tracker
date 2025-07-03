@@ -1,3 +1,67 @@
+<script setup lang="ts">
+import type { Transaction, Category } from "~/types";
+
+const props = defineProps<{
+  categories: Category[];
+  disabled?: boolean;
+}>();
+
+const emit = defineEmits<{
+  add: [
+    transaction: Pick<Transaction, "amount" | "categoryId" | "description">
+  ];
+}>();
+
+const form = ref({
+  amount: 0,
+  categoryId: null as number | null,
+  description: "",
+});
+
+const error = ref<string | null>(null);
+
+const isFormValid = computed(() => {
+  return (
+    form.value.amount > 0 &&
+    form.value.categoryId !== null &&
+    form.value.description.trim().length > 0
+  );
+});
+
+watch(
+  form,
+  () => {
+    error.value = null;
+    if (form.value.amount <= 0) {
+      error.value = "Amount must be greater than 0";
+    } else if (!form.value.categoryId) {
+      error.value = "Please select a category";
+    } else if (!form.value.description.trim()) {
+      error.value = "Description is required";
+    }
+  },
+  { deep: true }
+);
+
+function submitForm() {
+  if (!isFormValid.value || error.value) return;
+
+  const transaction = {
+    amount: form.value.amount,
+    categoryId: form.value.categoryId!,
+    description: form.value.description.trim(),
+  };
+
+  emit("add", transaction);
+
+  form.value = {
+    amount: 0,
+    categoryId: null,
+    description: "",
+  };
+}
+</script>
+
 <template>
   <form @submit.prevent="submitForm" class="transaction-form">
     <div>
@@ -49,72 +113,6 @@
     </button>
   </form>
 </template>
-
-<script setup lang="ts">
-import type { Transaction, Category } from "~/types";
-
-const props = defineProps<{
-  categories: Category[];
-  disabled?: boolean;
-}>();
-
-const emit = defineEmits<{
-  add: [
-    transaction: Pick<Transaction, "amount" | "categoryId" | "description">
-  ];
-}>();
-
-const form = ref({
-  amount: 0,
-  categoryId: null as number | null,
-  description: "",
-});
-
-const error = ref<string | null>(null);
-
-const isFormValid = computed(() => {
-  return (
-    form.value.amount > 0 &&
-    form.value.categoryId !== null &&
-    form.value.description.trim().length > 0
-  );
-});
-
-watch(
-  form,
-  () => {
-    error.value = null;
-    // Валидация
-    if (form.value.amount <= 0) {
-      error.value = "Amount must be greater than 0";
-    } else if (!form.value.categoryId) {
-      error.value = "Please select a category";
-    } else if (!form.value.description.trim()) {
-      error.value = "Description is required";
-    }
-  },
-  { deep: true }
-);
-
-function submitForm() {
-  if (!isFormValid.value || error.value) return;
-
-  const transaction = {
-    amount: form.value.amount,
-    categoryId: form.value.categoryId!,
-    description: form.value.description.trim(),
-  };
-
-  emit("add", transaction);
-
-  // Reset form
-  form.value = {
-    amount: 0,
-    categoryId: null,
-    description: "",
-  };
-}
-</script>
 
 <style scoped>
 .transaction-form {
