@@ -29,6 +29,11 @@ const isModalOpen = ref(false);
 const editingTransaction = ref<Transaction | null>(null);
 const error = ref("");
 
+// Добавляем состояние для модального окна удаления
+const deleteModal = ref(false);
+const transactionToDelete = ref<Transaction | null>(null);
+const isDeleting = ref(false);
+
 const search = ref("");
 const isSubmitting = ref(false);
 
@@ -72,6 +77,24 @@ const tableData = computed(() => {
   });
 });
 
+// Computed для данных удаляемой транзакции с проверками на null
+const deleteTransactionData = computed(() => {
+  if (!transactionToDelete.value) return null;
+
+  const transaction = transactionToDelete.value;
+  const category = props.categories.find(
+    (c) => c.id === transaction.categoryId
+  );
+
+  return {
+    description: transaction.description,
+    amount: Number(transaction.amount).toFixed(2),
+    date: new Date(transaction.date).toLocaleDateString(),
+    categoryName: category?.name || "Unknown",
+    categoryColor: category?.color || "#3b82f6",
+  };
+});
+
 function openEditModal(transaction: Transaction) {
   editingTransaction.value = transaction;
   isModalOpen.value = true;
@@ -100,18 +123,32 @@ async function handleEditSubmit(
   }
 }
 
-async function handleDelete(transaction: Transaction) {
-  if (
-    confirm(`Are you sure you want to delete "${transaction.description}"?`)
-  ) {
-    try {
-      await removeTransaction(transaction.id);
-      await loadTransactions();
-    } catch (err) {
-      error.value = "Failed to delete transaction";
-      console.error(err);
-    }
+// Новые функции для модального окна удаления
+function showDeleteConfirmation(transaction: Transaction) {
+  transactionToDelete.value = transaction;
+  deleteModal.value = true;
+}
+
+async function confirmDelete() {
+  if (!transactionToDelete.value) return;
+
+  try {
+    isDeleting.value = true;
+    await removeTransaction(transactionToDelete.value.id);
+    await loadTransactions();
+    deleteModal.value = false;
+    transactionToDelete.value = null;
+  } catch (err) {
+    error.value = "Failed to delete transaction";
+    console.error(err);
+  } finally {
+    isDeleting.value = false;
   }
+}
+
+function cancelDelete() {
+  deleteModal.value = false;
+  transactionToDelete.value = null;
 }
 
 function clearFilters() {
@@ -133,16 +170,13 @@ function clearFilters() {
       <div class="flex items-center gap-3">
         <HenaketIcon icon="list" size="24px" class="text-blue-600" />
         <h3 class="text-lg font-semibold text-gray-800">Transaction List</h3>
-        <span
-          :class="[
-            'px-2 py-1 rounded text-xs font-medium',
-            filteredTransactions.length > 0
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-600',
-          ]"
+        <HenaketBadge
+          :backgroundColor="
+            filteredTransactions.length > 0 ? '#3b82f6' : '#9ca3af'
+          "
         >
           {{ filteredTransactions.length }}
-        </span>
+        </HenaketBadge>
       </div>
 
       <div class="flex flex-wrap gap-2">
@@ -184,10 +218,7 @@ function clearFilters() {
     </div>
 
     <!-- Поиск -->
-    <div
-      v-if="showSearch"
-      class="p-4 bg-white rounded-lg border border-gray-200 shadow"
-    >
+    <HenaketCard v-if="showSearch" class="p-4">
       <HenaketInputField
         v-model="search"
         label="Search transactions"
@@ -197,13 +228,10 @@ function clearFilters() {
           <HenaketIcon icon="search" size="20px" />
         </template>
       </HenaketInputField>
-    </div>
+    </HenaketCard>
 
     <!-- Фильтры -->
-    <div
-      v-if="showFilter"
-      class="p-4 bg-white rounded-lg border border-gray-200 shadow"
-    >
+    <HenaketCard v-if="showFilter" class="p-4">
       <div class="space-y-4">
         <div class="flex items-center gap-3 mb-4">
           <HenaketIcon icon="tune" size="20px" class="text-blue-600" />
@@ -249,54 +277,37 @@ function clearFilters() {
           </HenaketInputField>
         </div>
       </div>
-    </div>
+    </HenaketCard>
 
     <!-- Состояния загрузки и ошибок -->
-    <div
+    <HenaketAlert
       v-if="transactionsLoading"
-      class="p-4 bg-blue-50 border border-blue-200 rounded-lg"
-    >
-      <div class="flex items-center gap-3">
-        <HenaketIcon icon="hourglass_empty" size="20px" class="text-blue-600" />
-        <div>
-          <h4 class="font-medium text-blue-800">Loading transactions...</h4>
-          <p class="text-blue-700 text-sm">
-            Please wait while we fetch your transactions.
-          </p>
-        </div>
-      </div>
-    </div>
+      variant="info"
+      title="Loading transactions..."
+      content="Please wait while we fetch your transactions."
+      icon="hourglass_empty"
+    />
 
-    <div
+    <HenaketAlert
       v-else-if="transactionsError"
-      class="p-4 bg-red-50 border border-red-200 rounded-lg"
-    >
-      <div class="flex items-center gap-3">
-        <HenaketIcon icon="error" size="20px" class="text-red-600" />
-        <div>
-          <h4 class="font-medium text-red-800">Error loading transactions</h4>
-          <p class="text-red-700 text-sm">{{ transactionsError }}</p>
-        </div>
-      </div>
-    </div>
+      variant="error"
+      title="Error loading transactions"
+      :content="transactionsError"
+      icon="error"
+    />
 
-    <div
+    <HenaketAlert
       v-else-if="categoriesError"
-      class="p-4 bg-red-50 border border-red-200 rounded-lg"
-    >
-      <div class="flex items-center gap-3">
-        <HenaketIcon icon="error" size="20px" class="text-red-600" />
-        <div>
-          <h4 class="font-medium text-red-800">Error loading categories</h4>
-          <p class="text-red-700 text-sm">{{ categoriesError }}</p>
-        </div>
-      </div>
-    </div>
+      variant="error"
+      title="Error loading categories"
+      :content="categoriesError"
+      icon="error"
+    />
 
     <!-- Таблица транзакций -->
-    <div
+    <HenaketCard
       v-else-if="filteredTransactions.length"
-      class="overflow-hidden bg-white rounded-lg border border-gray-200 shadow"
+      class="overflow-hidden"
     >
       <div class="overflow-x-auto">
         <table class="w-full">
@@ -342,12 +353,9 @@ function clearFilters() {
                 <div class="font-medium">{{ item.description }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <span
-                  class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-white"
-                  :style="{ backgroundColor: item.categoryColor }"
-                >
+                <HenaketBadge :backgroundColor="item.categoryColor">
                   {{ item.categoryName }}
-                </span>
+                </HenaketBadge>
               </td>
               <td
                 class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900"
@@ -364,7 +372,7 @@ function clearFilters() {
                     <HenaketIcon icon="edit" size="16px" />
                   </button>
                   <button
-                    @click="handleDelete(item.rawTransaction)"
+                    @click="showDeleteConfirmation(item.rawTransaction)"
                     :disabled="disabled"
                     class="inline-flex items-center justify-center w-8 h-8 rounded border border-gray-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
                   >
@@ -376,14 +384,11 @@ function clearFilters() {
           </tbody>
         </table>
       </div>
-    </div>
+    </HenaketCard>
 
     <!-- Пустое состояние -->
-    <div
-      v-else
-      class="p-12 text-center bg-white rounded-lg border border-gray-200 shadow"
-    >
-      <div class="space-y-4">
+    <HenaketCard v-else class="p-12">
+      <div class="text-center space-y-4">
         <HenaketIcon
           icon="receipt_long"
           size="64px"
@@ -406,7 +411,7 @@ function clearFilters() {
           Clear Filters
         </button>
       </div>
-    </div>
+    </HenaketCard>
 
     <!-- Модальное окно редактирования -->
     <HenaketModal v-model="isModalOpen">
@@ -426,37 +431,151 @@ function clearFilters() {
           :disabled="isSubmitting"
         />
 
-        <div
+        <HenaketAlert
           v-if="error"
-          class="mt-4 p-3 bg-red-50 border border-red-200 rounded"
-        >
-          <div class="flex items-center gap-2">
-            <HenaketIcon icon="error" size="16px" class="text-red-600" />
-            <span class="text-red-700 text-sm">{{ error }}</span>
+          variant="error"
+          :title="error"
+          icon="error"
+          class="mt-4"
+        />
+      </template>
+    </HenaketModal>
+
+    <!-- Модальное окно подтверждения удаления -->
+    <HenaketModal v-model="deleteModal">
+      <template #title>
+        <div class="flex items-center gap-3">
+          <HenaketIcon icon="warning" size="24px" class="text-red-600" />
+          Confirm Deletion
+        </div>
+      </template>
+
+      <template #description>
+        <div class="space-y-6">
+          <!-- Предупреждение -->
+          <HenaketAlert
+            variant="warning"
+            icon="warning"
+            title="This action cannot be undone"
+            content="Are you sure you want to delete this transaction? This will permanently remove it from your records."
+          />
+
+          <!-- Детали транзакции -->
+          <div v-if="deleteTransactionData" class="space-y-4">
+            <h4 class="font-medium text-gray-800">Transaction Details:</h4>
+
+            <HenaketCard class="p-4 bg-gray-50">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 font-medium">Description:</span>
+                  <span class="font-semibold text-gray-800">
+                    {{ deleteTransactionData.description }}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 font-medium">Amount:</span>
+                  <span class="font-bold text-red-600 text-lg">
+                    ${{ deleteTransactionData.amount }}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 font-medium">Date:</span>
+                  <span class="font-semibold text-gray-800">
+                    {{ deleteTransactionData.date }}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 font-medium">Category:</span>
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="w-3 h-3 rounded-full"
+                      :style="{
+                        backgroundColor: deleteTransactionData.categoryColor,
+                      }"
+                    ></div>
+                    <span class="font-semibold text-gray-800">
+                      {{ deleteTransactionData.categoryName }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </HenaketCard>
+          </div>
+
+          <!-- Fallback если данные не загружены -->
+          <div v-else class="space-y-4">
+            <h4 class="font-medium text-gray-800">Transaction Details:</h4>
+            <HenaketCard class="p-4 bg-gray-50">
+              <div class="text-center text-gray-500">
+                <HenaketIcon icon="error" size="24px" class="mx-auto mb-2" />
+                <p>Unable to load transaction details</p>
+              </div>
+            </HenaketCard>
+          </div>
+
+          <!-- Дополнительная информация -->
+          <HenaketInfoCard
+            icon="info"
+            title="Impact of Deletion"
+            content="Deleting this transaction will also affect your financial statistics and category totals. Make sure this is the correct transaction to remove."
+          />
+
+          <!-- Кнопки действий -->
+          <div class="flex gap-3 pt-4">
+            <button
+              @click="cancelDelete"
+              :disabled="isDeleting"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <HenaketIcon icon="close" size="20px" />
+              Cancel
+            </button>
+
+            <button
+              @click="confirmDelete"
+              :disabled="isDeleting || !transactionToDelete"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <HenaketIcon v-if="!isDeleting" icon="delete" size="20px" />
+              <div
+                v-else
+                class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+              ></div>
+              {{ isDeleting ? "Deleting..." : "Delete Transaction" }}
+            </button>
           </div>
         </div>
       </template>
     </HenaketModal>
 
     <!-- Информация о результатах -->
-    <div
+    <HenaketInfoCard
       v-if="
         !transactionsLoading &&
         !transactionsError &&
         filteredTransactions.length > 0
       "
-      class="p-4 bg-blue-50 border border-blue-200 rounded-lg"
-    >
-      <div class="flex items-center gap-3">
-        <HenaketIcon icon="info" size="20px" class="text-blue-600" />
-        <div>
-          <h4 class="font-medium text-blue-800">Results</h4>
-          <p class="text-blue-700 text-sm">
-            Showing {{ filteredTransactions.length }} of
-            {{ transactions.length || 0 }} transactions
-          </p>
-        </div>
-      </div>
-    </div>
+      icon="info"
+      title="Results"
+      :content="`Showing ${filteredTransactions.length} of ${
+        transactions.length || 0
+      } transactions`"
+    />
+
+    <!-- Дополнительные советы для пустого состояния -->
+    <HenaketInfoCard
+      v-if="
+        !transactionsLoading &&
+        !transactionsError &&
+        filteredTransactions.length === 0 &&
+        transactions.length === 0
+      "
+      icon="lightbulb"
+      title="Getting Started"
+      content="Add your first transaction to start tracking your finances. You can categorize expenses, add descriptions, and monitor your spending patterns over time."
+    />
   </div>
 </template>

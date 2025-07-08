@@ -94,7 +94,8 @@ watch(
 </script>
 
 <template>
-  <div class="space-y-6">
+  <!-- Фиксируем минимальную высоту контейнера для предотвращения изменения размера -->
+  <div class="space-y-6 min-h-[500px]">
     <!-- Заголовок формы -->
     <div class="text-center pb-4">
       <HenaketIcon
@@ -139,24 +140,27 @@ watch(
         </template>
       </HenaketInputField>
 
-      <!-- Сумма -->
-      <HenaketInputField
-        v-model="form.amount"
-        type="number"
-        label="Amount"
-        placeholder="0.00"
-        :disabled="disabled"
-        step="0.01"
-        min="0"
-        required
-      >
-        <template #prefix>
-          <HenaketIcon icon="payments" size="20px" />
-        </template>
-        <template #suffix>
-          <span class="text-gray-500">$</span>
-        </template>
-      </HenaketInputField>
+      <!-- Сумма - Фиксируем ширину для предотвращения изменения размера -->
+      <div class="w-full">
+        <HenaketInputField
+          v-model="form.amount"
+          type="number"
+          label="Amount"
+          placeholder="0.00"
+          :disabled="disabled"
+          step="0.01"
+          min="0"
+          required
+          class="w-full"
+        >
+          <template #prefix>
+            <HenaketIcon icon="payments" size="20px" />
+          </template>
+          <template #suffix>
+            <span class="text-gray-500 w-4 text-center">$</span>
+          </template>
+        </HenaketInputField>
+      </div>
 
       <!-- Категория -->
       <div class="space-y-2">
@@ -167,7 +171,7 @@ watch(
           <HenaketIcon
             icon="category"
             size="20px"
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"
           />
           <select
             v-model="form.categoryId"
@@ -188,15 +192,39 @@ watch(
       </div>
     </div>
 
-    <!-- Информация о валидации -->
-    <HenaketInfoCard
-      v-if="
-        !isFormValid && (form.description || form.amount || form.categoryId)
-      "
-      icon="info"
-      title="Form Requirements"
-      content="Please fill in all fields: description, amount (greater than 0), and select a category."
-    />
+    <!-- Информация о валидации - фиксированная высота -->
+    <div class="min-h-[60px]">
+      <HenaketInfoCard
+        v-if="
+          !isFormValid && (form.description || form.amount || form.categoryId)
+        "
+        icon="info"
+        title="Form Requirements"
+        content="Please fill in all fields: description, amount (greater than 0), and select a category."
+      />
+    </div>
+
+    <!-- Предпросмотр - фиксированная высота -->
+    <div class="min-h-[80px]">
+      <HenaketCard v-if="isFormValid" class="p-4 bg-green-50 border-green-200">
+        <div class="flex items-center gap-3">
+          <HenaketIcon icon="preview" size="24px" class="text-green-600" />
+          <div>
+            <h4 class="font-semibold text-green-800">Preview</h4>
+            <p class="text-green-700">
+              <strong class="font-mono"
+                >${{ parseFloat(form.amount || "0").toFixed(2) }}</strong
+              >
+              -
+              {{ form.description }}
+              <span class="text-green-600">
+                ({{ categories.find((c) => c.id === form.categoryId)?.name }})
+              </span>
+            </p>
+          </div>
+        </div>
+      </HenaketCard>
+    </div>
 
     <!-- Кнопки -->
     <div class="flex gap-3 pt-4">
@@ -218,22 +246,5 @@ watch(
         {{ transaction ? "Save Changes" : "Add Transaction" }}
       </button>
     </div>
-
-    <!-- Предпросмотр -->
-    <HenaketCard v-if="isFormValid" class="p-4 bg-green-50 border-green-200">
-      <div class="flex items-center gap-3">
-        <HenaketIcon icon="preview" size="24px" class="text-green-600" />
-        <div>
-          <h4 class="font-semibold text-green-800">Preview</h4>
-          <p class="text-green-700">
-            <strong>${{ parseFloat(form.amount).toFixed(2) }}</strong> -
-            {{ form.description }}
-            <span class="text-green-600">
-              ({{ categories.find((c) => c.id === form.categoryId)?.name }})
-            </span>
-          </p>
-        </div>
-      </div>
-    </HenaketCard>
   </div>
 </template>
