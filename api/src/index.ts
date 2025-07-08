@@ -28,6 +28,7 @@ app.get("/categories", async (c) => {
     });
     return c.json(categories);
   } catch (error) {
+    console.error("Error fetching categories:", error);
     return c.json({ error: "Failed to fetch categories" }, 500);
   }
 });
@@ -35,20 +36,26 @@ app.get("/categories", async (c) => {
 app.post("/categories", async (c) => {
   try {
     const body = await c.req.json();
-    const { name } = body;
+    const { name, color } = body;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return c.json({ error: "Category name is required" }, 400);
     }
 
+    // Валидация цвета (опционально)
+    const categoryColor =
+      color && typeof color === "string" ? color : "#3b82f6";
+
     const category = await prisma.category.create({
       data: {
         name: name.trim(),
+        color: categoryColor,
       },
     });
 
     return c.json(category, 201);
   } catch (error) {
+    console.error("Error creating category:", error);
     return c.json({ error: "Failed to create category" }, 500);
   }
 });
@@ -57,19 +64,33 @@ app.put("/categories/:id", async (c) => {
   try {
     const id = parseInt(c.req.param("id"));
     const body = await c.req.json();
-    const { name } = body;
+    const { name, color } = body;
 
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return c.json({ error: "Category name is required" }, 400);
+    // Проверяем что хотя бы одно поле передано
+    if (
+      (!name || typeof name !== "string" || name.trim().length === 0) &&
+      (!color || typeof color !== "string")
+    ) {
+      return c.json({ error: "At least name or color is required" }, 400);
+    }
+
+    // Готовим данные для обновления
+    const updateData: any = {};
+    if (name && typeof name === "string" && name.trim().length > 0) {
+      updateData.name = name.trim();
+    }
+    if (color && typeof color === "string") {
+      updateData.color = color;
     }
 
     const category = await prisma.category.update({
       where: { id },
-      data: { name: name.trim() },
+      data: updateData,
     });
 
     return c.json(category);
   } catch (error) {
+    console.error("Error updating category:", error);
     return c.json({ error: "Failed to update category" }, 500);
   }
 });
@@ -78,12 +99,19 @@ app.delete("/categories/:id", async (c) => {
   try {
     const id = parseInt(c.req.param("id"));
 
+    // Сначала удаляем все транзакции этой категории
+    await prisma.transaction.deleteMany({
+      where: { categoryId: id },
+    });
+
+    // Затем удаляем саму категорию
     await prisma.category.delete({
       where: { id },
     });
 
     return c.json({ message: "Category deleted successfully" });
   } catch (error) {
+    console.error("Error deleting category:", error);
     return c.json({ error: "Failed to delete category" }, 500);
   }
 });
@@ -97,6 +125,14 @@ app.delete("/categories/batch", async (c) => {
       return c.json({ error: "IDs array is required" }, 400);
     }
 
+    // Сначала удаляем все транзакции этих категорий
+    await prisma.transaction.deleteMany({
+      where: {
+        categoryId: { in: ids },
+      },
+    });
+
+    // Затем удаляем сами категории
     await prisma.category.deleteMany({
       where: {
         id: { in: ids },
@@ -105,6 +141,7 @@ app.delete("/categories/batch", async (c) => {
 
     return c.json({ message: `${ids.length} categories deleted successfully` });
   } catch (error) {
+    console.error("Error deleting categories:", error);
     return c.json({ error: "Failed to delete categories" }, 500);
   }
 });
@@ -147,6 +184,7 @@ app.get("/transactions", async (c) => {
 
     return c.json(transactions);
   } catch (error) {
+    console.error("Error fetching transactions:", error);
     return c.json({ error: "Failed to fetch transactions" }, 500);
   }
 });
@@ -182,6 +220,7 @@ app.post("/transactions", async (c) => {
 
     return c.json(transaction, 201);
   } catch (error) {
+    console.error("Error creating transaction:", error);
     return c.json({ error: "Failed to create transaction" }, 500);
   }
 });
@@ -218,6 +257,7 @@ app.put("/transactions/:id", async (c) => {
 
     return c.json(transaction);
   } catch (error) {
+    console.error("Error updating transaction:", error);
     return c.json({ error: "Failed to update transaction" }, 500);
   }
 });
@@ -232,6 +272,7 @@ app.delete("/transactions/:id", async (c) => {
 
     return c.json({ message: "Transaction deleted successfully" });
   } catch (error) {
+    console.error("Error deleting transaction:", error);
     return c.json({ error: "Failed to delete transaction" }, 500);
   }
 });

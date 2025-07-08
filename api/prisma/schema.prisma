@@ -11,6 +11,7 @@ datasource db {
 model Category {
   id           Int           @id @default(autoincrement())
   name         String        @db.VarChar(255)
+  color        String        @default("#3b82f6") @db.VarChar(7)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   transactions Transaction[]

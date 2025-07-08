@@ -37,13 +37,17 @@ async function apiRequest<T>(
 export const categoriesApi = {
   getAll: (): Promise<Category[]> => apiRequest<Category[]>("/categories"),
 
-  create: (category: Pick<Category, "name">): Promise<Category> =>
+  // Обновляем для поддержки name и color
+  create: (category: Pick<Category, "name" | "color">): Promise<Category> =>
     apiRequest<Category>("/categories", {
       method: "POST",
       body: JSON.stringify(category),
     }),
 
-  update: (id: number, category: Pick<Category, "name">): Promise<Category> =>
+  update: (
+    id: number,
+    category: Partial<Pick<Category, "name" | "color">>
+  ): Promise<Category> =>
     apiRequest<Category>(`/categories/${id}`, {
       method: "PUT",
       body: JSON.stringify(category),

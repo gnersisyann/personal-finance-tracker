@@ -1,27 +1,21 @@
 <script setup lang="ts">
-import type { Transaction } from "~/types";
+import type { Transaction, Category } from "~/types";
 
-const props = defineProps({
-  selectedCategory: {
-    type: [Number, null],
-    default: null,
-  },
-});
+const props = defineProps<{
+  categories: Category[];
+  disabled?: boolean;
+}>();
 
-const {
-  categories,
-  getCategory,
-  isLoading: categoriesLoading,
-  error: categoriesError,
-} = useCategories();
 const {
   transactions,
-  removeTransaction,
   updateTransaction,
+  removeTransaction,
+  loadTransactions,
   isLoading: transactionsLoading,
   error: transactionsError,
-  loadTransactions,
 } = useTransactions();
+
+const { error: categoriesError } = useCategories();
 
 const startDate = ref<string>("");
 const endDate = ref<string>("");
@@ -38,12 +32,48 @@ const error = ref("");
 const search = ref("");
 const isSubmitting = ref(false);
 
+// Загружаем транзакции при монтировании
 onMounted(async () => {
   await loadTransactions();
 });
 
+// Перезагружаем транзакции при изменении фильтров
+watch([selectedCategory, startDate, endDate, search], async () => {
+  await loadTransactions({
+    categoryId: selectedCategory.value || undefined,
+    startDate: startDate.value || undefined,
+    endDate: endDate.value || undefined,
+    search: search.value || undefined,
+  });
+});
+
+// Фильтрация транзакций (клиентская фильтрация для дополнительной гибкости)
+const filteredTransactions = computed(() => {
+  let filtered = transactions.value || [];
+  return filtered;
+});
+
+// Форматирование данных для таблицы
+const tableData = computed(() => {
+  return filteredTransactions.value.map((transaction) => {
+    const category = props.categories.find(
+      (c) => c.id === transaction.categoryId
+    );
+    return {
+      id: transaction.id,
+      date: new Date(transaction.date).toLocaleDateString(),
+      description: transaction.description,
+      categoryName: category?.name || "Unknown",
+      amount: transaction.amount,
+      formattedAmount: `$${Number(transaction.amount).toFixed(2)}`,
+      categoryColor: category?.color || "#3b82f6",
+      rawTransaction: transaction,
+    };
+  });
+});
+
 function openEditModal(transaction: Transaction) {
-  editingTransaction.value = { ...transaction };
+  editingTransaction.value = transaction;
   isModalOpen.value = true;
 }
 
@@ -53,270 +83,380 @@ function closeModal() {
   error.value = "";
 }
 
-const confirmDeleteId = ref<number | null>(null);
-
-function askDelete(id: number) {
-  confirmDeleteId.value = id;
-}
-
-async function confirmDelete() {
-  if (confirmDeleteId.value !== null) {
-    try {
-      await removeTransaction(confirmDeleteId.value);
-      confirmDeleteId.value = null;
-    } catch (err) {
-      console.error("Failed to delete transaction:", err);
-    }
-  }
-}
-
-function cancelDelete() {
-  confirmDeleteId.value = null;
-}
-
-const filteredTransactions = computed(() =>
-  selectedCategory.value == null
-    ? transactions.value
-    : transactions.value.filter((t) => t.categoryId === selectedCategory.value)
-);
-
-const searchedTransactions = computed(() =>
-  filteredTransactions.value.filter((t) =>
-    t.description.toLowerCase().includes(search.value.trim().toLowerCase())
-  )
-);
-
-const sortField = ref<"amount" | "categoryId" | "description" | "date">("date");
-const sortDirection = ref<"asc" | "desc">("desc");
-
-const dateFilteredTransactions = computed(() => {
-  return searchedTransactions.value.filter((t) => {
-    const tDate = new Date(t.date).setHours(0, 0, 0, 0);
-    const start = startDate.value
-      ? new Date(startDate.value).setHours(0, 0, 0, 0)
-      : null;
-    const end = endDate.value
-      ? new Date(endDate.value).setHours(0, 0, 0, 0)
-      : null;
-    if (start && tDate < start) return false;
-    if (end && tDate > end) return false;
-    return true;
-  });
-});
-
-const sortedTransactions = computed(() => {
-  const arr = [...dateFilteredTransactions.value];
-  arr.sort((a, b) => {
-    let aValue = a[sortField.value];
-    let bValue = b[sortField.value];
-
-    if (sortField.value === "categoryId" || sortField.value === "amount") {
-      aValue = Number(aValue);
-      bValue = Number(bValue);
-    } else if (sortField.value === "date") {
-      aValue = aValue !== undefined ? new Date(aValue).getTime() : 0;
-      bValue = bValue !== undefined ? new Date(bValue).getTime() : 0;
-    } else {
-      aValue = String(aValue).toLowerCase();
-      bValue = String(bValue).toLowerCase();
-    }
-
-    if (aValue < bValue) return sortDirection.value === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection.value === "asc" ? 1 : -1;
-    return 0;
-  });
-  return arr;
-});
-
-async function submitEdit() {
-  if (!editingTransaction.value) return;
-
+async function handleEditSubmit(
+  id: number,
+  updatedTransaction: Pick<Transaction, "amount" | "categoryId" | "description">
+) {
   try {
     isSubmitting.value = true;
-    error.value = "";
-
-    await updateTransaction(editingTransaction.value.id, {
-      amount: editingTransaction.value.amount,
-      categoryId: editingTransaction.value.categoryId,
-      description: editingTransaction.value.description,
-    });
-
+    await updateTransaction(id, updatedTransaction);
     closeModal();
+    await loadTransactions();
   } catch (err) {
-    error.value =
-      err instanceof Error ? err.message : "Failed to update transaction";
+    error.value = "Failed to update transaction";
+    console.error(err);
   } finally {
     isSubmitting.value = false;
   }
 }
 
-function sortBy(by: "amount" | "categoryId" | "description" | "date") {
-  if (sortField.value == by) {
-    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-  } else {
-    sortField.value = by;
-    sortDirection.value = by === "date" ? "desc" : "asc";
+async function handleDelete(transaction: Transaction) {
+  if (
+    confirm(`Are you sure you want to delete "${transaction.description}"?`)
+  ) {
+    try {
+      await removeTransaction(transaction.id);
+      await loadTransactions();
+    } catch (err) {
+      error.value = "Failed to delete transaction";
+      console.error(err);
+    }
   }
+}
+
+function clearFilters() {
+  search.value = "";
+  selectedCategory.value = null;
+  startDate.value = "";
+  endDate.value = "";
+  showFilter.value = false;
+  showSearch.value = false;
 }
 </script>
 
 <template>
-  <div>
+  <div class="space-y-6">
+    <!-- Заголовок с кнопками управления -->
     <div
-      v-if="transactionsLoading || categoriesLoading"
-      style="text-align: center; padding: 20px"
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
     >
-      Loading...
+      <div class="flex items-center gap-3">
+        <HenaketIcon icon="list" size="24px" class="text-blue-600" />
+        <h3 class="text-lg font-semibold text-gray-800">Transaction List</h3>
+        <span
+          :class="[
+            'px-2 py-1 rounded text-xs font-medium',
+            filteredTransactions.length > 0
+              ? 'bg-blue-100 text-blue-800'
+              : 'bg-gray-100 text-gray-600',
+          ]"
+        >
+          {{ filteredTransactions.length }}
+        </span>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button
+          @click="showSearch = !showSearch"
+          :class="[
+            'inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm font-medium transition-colors',
+            showSearch
+              ? 'bg-blue-50 border-blue-300 text-blue-700'
+              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
+          ]"
+        >
+          <HenaketIcon icon="search" size="18px" />
+          Search
+        </button>
+
+        <button
+          @click="showFilter = !showFilter"
+          :class="[
+            'inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm font-medium transition-colors',
+            showFilter
+              ? 'bg-blue-50 border-blue-300 text-blue-700'
+              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
+          ]"
+        >
+          <HenaketIcon icon="filter_list" size="18px" />
+          Filter
+        </button>
+
+        <button
+          v-if="search || selectedCategory || startDate || endDate"
+          @click="clearFilters"
+          class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+        >
+          <HenaketIcon icon="clear" size="18px" />
+          Clear
+        </button>
+      </div>
     </div>
 
-    <div v-if="transactionsError" style="color: red; margin-bottom: 16px">
-      Error loading transactions: {{ transactionsError }}
-      <button @click="loadTransactions()" style="margin-left: 8px">
-        Retry
-      </button>
-    </div>
-
-    <div v-if="categoriesError" style="color: red; margin-bottom: 16px">
-      Error loading categories: {{ categoriesError }}
-    </div>
-
-    <div style="margin-bottom: 16px">
-      <button @click="showFilter = !showFilter" style="margin-right: 8px">
-        Filter
-      </button>
-      <button @click="showSearch = !showSearch">Search</button>
-    </div>
-
-    <div v-if="showFilter" style="margin-bottom: 12px">
-      <label>
-        Category:
-        <select v-model="selectedCategory">
-          <option :value="null">All categories</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-      </label>
-      <label style="margin-left: 16px">
-        Start date:
-        <input type="date" v-model="startDate" />
-      </label>
-      <label style="margin-left: 12px">
-        End date:
-        <input type="date" v-model="endDate" />
-      </label>
-    </div>
-
-    <div v-if="showSearch" style="margin-bottom: 12px">
-      <input
-        type="text"
+    <!-- Поиск -->
+    <div
+      v-if="showSearch"
+      class="p-4 bg-white rounded-lg border border-gray-200 shadow"
+    >
+      <HenaketInputField
         v-model="search"
-        placeholder="Description..."
-        style="width: 200px"
-      />
+        label="Search transactions"
+        placeholder="Search by description..."
+      >
+        <template #prefix>
+          <HenaketIcon icon="search" size="20px" />
+        </template>
+      </HenaketInputField>
     </div>
 
-    <table v-if="sortedTransactions.length" border="1">
-      <thead>
-        <tr>
-          <th @click="sortBy('amount')" style="cursor: pointer">Amount</th>
-          <th @click="sortBy('categoryId')" style="cursor: pointer">
-            Category
-          </th>
-          <th @click="sortBy('description')" style="cursor: pointer">
-            Description
-          </th>
-          <th @click="sortBy('date')" style="cursor: pointer">Date</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="transaction in sortedTransactions" :key="transaction.id">
-          <td>{{ transaction.amount }}</td>
-          <td>{{ getCategory(transaction.categoryId) }}</td>
-          <td>{{ transaction.description }}</td>
-          <td>{{ new Date(transaction.date).toLocaleString() }}</td>
-          <td>
-            <button
-              @click="askDelete(transaction.id)"
-              :disabled="transactionsLoading"
-            >
-              Delete
-            </button>
-            <button
-              v-if="!isModalOpen"
-              @click="openEditModal(transaction)"
-              :disabled="transactionsLoading"
-            >
-              Edit
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
+    <!-- Фильтры -->
     <div
-      class="no-data"
-      v-else-if="!transactionsLoading"
-      style="text-align: center; color: #888; margin: 24px 0"
+      v-if="showFilter"
+      class="p-4 bg-white rounded-lg border border-gray-200 shadow"
     >
-      No transactions to display.
-    </div>
+      <div class="space-y-4">
+        <div class="flex items-center gap-3 mb-4">
+          <HenaketIcon icon="tune" size="20px" class="text-blue-600" />
+          <h4 class="font-semibold text-gray-800">Filter Options</h4>
+        </div>
 
-    <div v-if="confirmDeleteId !== null" class="modal">
-      <div class="modal-content">
-        <p>Are you sure you want to delete this transaction?</p>
-        <div>
-          <button @click="confirmDelete" :disabled="transactionsLoading">
-            Yes
-          </button>
-          <button @click="cancelDelete">No</button>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Категория -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700"
+              >Category:</label
+            >
+            <div class="relative">
+              <HenaketIcon
+                icon="category"
+                size="18px"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <select
+                v-model="selectedCategory"
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option :value="null">All categories</option>
+                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                  {{ cat.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Дата начала -->
+          <HenaketInputField v-model="startDate" type="date" label="Start date">
+            <template #prefix>
+              <HenaketIcon icon="calendar_today" size="18px" />
+            </template>
+          </HenaketInputField>
+
+          <!-- Дата окончания -->
+          <HenaketInputField v-model="endDate" type="date" label="End date">
+            <template #prefix>
+              <HenaketIcon icon="event" size="18px" />
+            </template>
+          </HenaketInputField>
         </div>
       </div>
     </div>
 
-    <div v-if="isModalOpen && editingTransaction" class="modal">
-      <form @submit.prevent="submitEdit" class="modal-content">
-        <h3>Edit Transaction</h3>
+    <!-- Состояния загрузки и ошибок -->
+    <div
+      v-if="transactionsLoading"
+      class="p-4 bg-blue-50 border border-blue-200 rounded-lg"
+    >
+      <div class="flex items-center gap-3">
+        <HenaketIcon icon="hourglass_empty" size="20px" class="text-blue-600" />
         <div>
-          <label>Amount</label>
-          <input
-            v-model.number="editingTransaction.amount"
-            placeholder="Amount"
-            type="number"
-            step="0.01"
-            min="0"
-            required
-          />
+          <h4 class="font-medium text-blue-800">Loading transactions...</h4>
+          <p class="text-blue-700 text-sm">
+            Please wait while we fetch your transactions.
+          </p>
         </div>
+      </div>
+    </div>
+
+    <div
+      v-else-if="transactionsError"
+      class="p-4 bg-red-50 border border-red-200 rounded-lg"
+    >
+      <div class="flex items-center gap-3">
+        <HenaketIcon icon="error" size="20px" class="text-red-600" />
         <div>
-          <label>Category</label>
-          <select v-model.number="editingTransaction.categoryId" required>
-            <option :value="null" disabled>Category</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-              {{ cat.name }}
-            </option>
-          </select>
+          <h4 class="font-medium text-red-800">Error loading transactions</h4>
+          <p class="text-red-700 text-sm">{{ transactionsError }}</p>
         </div>
+      </div>
+    </div>
+
+    <div
+      v-else-if="categoriesError"
+      class="p-4 bg-red-50 border border-red-200 rounded-lg"
+    >
+      <div class="flex items-center gap-3">
+        <HenaketIcon icon="error" size="20px" class="text-red-600" />
         <div>
-          <label>Description</label>
-          <input
-            v-model="editingTransaction.description"
-            placeholder="Description"
-            required
-            minlength="2"
-          />
+          <h4 class="font-medium text-red-800">Error loading categories</h4>
+          <p class="text-red-700 text-sm">{{ categoriesError }}</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Таблица транзакций -->
+    <div
+      v-else-if="filteredTransactions.length"
+      class="overflow-hidden bg-white rounded-lg border border-gray-200 shadow"
+    >
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Date
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Description
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Category
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Amount
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr
+              v-for="item in tableData"
+              :key="item.id"
+              class="hover:bg-gray-50"
+            >
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ item.date }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-900">
+                <div class="font-medium">{{ item.description }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-white"
+                  :style="{ backgroundColor: item.categoryColor }"
+                >
+                  {{ item.categoryName }}
+                </span>
+              </td>
+              <td
+                class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900"
+              >
+                {{ item.formattedAmount }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <div class="flex gap-2">
+                  <button
+                    @click="openEditModal(item.rawTransaction)"
+                    :disabled="disabled"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <HenaketIcon icon="edit" size="16px" />
+                  </button>
+                  <button
+                    @click="handleDelete(item.rawTransaction)"
+                    :disabled="disabled"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded border border-gray-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    <HenaketIcon icon="delete" size="16px" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Пустое состояние -->
+    <div
+      v-else
+      class="p-12 text-center bg-white rounded-lg border border-gray-200 shadow"
+    >
+      <div class="space-y-4">
+        <HenaketIcon
+          icon="receipt_long"
+          size="64px"
+          class="text-gray-400 mx-auto"
+        />
+        <h3 class="text-lg font-medium text-gray-600">No transactions found</h3>
+        <p class="text-gray-500">
+          {{
+            search || selectedCategory || startDate || endDate
+              ? "Try adjusting your filters or search terms"
+              : "Start by adding your first transaction"
+          }}
+        </p>
+        <button
+          v-if="search || selectedCategory || startDate || endDate"
+          @click="clearFilters"
+          class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+        >
+          <HenaketIcon icon="clear" size="18px" />
+          Clear Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Модальное окно редактирования -->
+    <HenaketModal v-model="isModalOpen">
+      <template #title>
+        <div class="flex items-center gap-3">
+          <HenaketIcon icon="edit" size="24px" class="text-blue-600" />
+          Edit Transaction
+        </div>
+      </template>
+
+      <template #description>
+        <AppTransactionForm
+          :transaction="editingTransaction"
+          :categories="categories"
+          @update="handleEditSubmit"
+          @cancel="closeModal"
+          :disabled="isSubmitting"
+        />
+
+        <div
+          v-if="error"
+          class="mt-4 p-3 bg-red-50 border border-red-200 rounded"
+        >
+          <div class="flex items-center gap-2">
+            <HenaketIcon icon="error" size="16px" class="text-red-600" />
+            <span class="text-red-700 text-sm">{{ error }}</span>
+          </div>
+        </div>
+      </template>
+    </HenaketModal>
+
+    <!-- Информация о результатах -->
+    <div
+      v-if="
+        !transactionsLoading &&
+        !transactionsError &&
+        filteredTransactions.length > 0
+      "
+      class="p-4 bg-blue-50 border border-blue-200 rounded-lg"
+    >
+      <div class="flex items-center gap-3">
+        <HenaketIcon icon="info" size="20px" class="text-blue-600" />
         <div>
-          <button type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? "Saving..." : "Save" }}
-          </button>
-          <button type="button" @click="closeModal" :disabled="isSubmitting">
-            Cancel
-          </button>
+          <h4 class="font-medium text-blue-800">Results</h4>
+          <p class="text-blue-700 text-sm">
+            Showing {{ filteredTransactions.length }} of
+            {{ transactions.length || 0 }} transactions
+          </p>
         </div>
-        <div v-if="error" style="color: red; margin-top: 8px">{{ error }}</div>
-      </form>
+      </div>
     </div>
   </div>
 </template>

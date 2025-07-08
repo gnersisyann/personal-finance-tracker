@@ -4,25 +4,33 @@ import type { Transaction, Category } from "~/types";
 const props = defineProps<{
   categories: Category[];
   disabled?: boolean;
+  transaction?: Transaction | null;
 }>();
 
 const emit = defineEmits<{
   add: [
     transaction: Pick<Transaction, "amount" | "categoryId" | "description">
   ];
+  update: [
+    id: number,
+    transaction: Pick<Transaction, "amount" | "categoryId" | "description">
+  ];
+  cancel: [];
 }>();
 
 const form = ref({
-  amount: 0,
-  categoryId: null as number | null,
-  description: "",
+  amount: props.transaction?.amount?.toString() || "",
+  categoryId: props.transaction?.categoryId || (null as number | null),
+  description: props.transaction?.description || "",
 });
 
 const error = ref<string | null>(null);
 
 const isFormValid = computed(() => {
+  const amount = parseFloat(form.value.amount);
   return (
-    form.value.amount > 0 &&
+    amount > 0 &&
+    !isNaN(amount) &&
     form.value.categoryId !== null &&
     form.value.description.trim().length > 0
   );
@@ -32,135 +40,200 @@ watch(
   form,
   () => {
     error.value = null;
-    if (form.value.amount <= 0) {
-      error.value = "Amount must be greater than 0";
-    } else if (!form.value.categoryId) {
-      error.value = "Please select a category";
-    } else if (!form.value.description.trim()) {
-      error.value = "Description is required";
-    }
   },
   { deep: true }
 );
 
 function submitForm() {
-  if (!isFormValid.value || error.value) return;
+  if (!isFormValid.value) {
+    error.value = "Please fill in all fields correctly";
+    return;
+  }
 
-  const transaction = {
-    amount: form.value.amount,
-    categoryId: form.value.categoryId!,
-    description: form.value.description.trim(),
-  };
+  const amount = parseFloat(form.value.amount);
 
-  emit("add", transaction);
-
-  form.value = {
-    amount: 0,
-    categoryId: null,
-    description: "",
-  };
+  if (props.transaction) {
+    emit("update", props.transaction.id, {
+      amount: amount,
+      categoryId: form.value.categoryId!,
+      description: form.value.description,
+    });
+  } else {
+    emit("add", {
+      amount: amount,
+      categoryId: form.value.categoryId!,
+      description: form.value.description,
+    });
+  }
 }
+
+function cancel() {
+  emit("cancel");
+}
+
+// Сброс формы при изменении транзакции
+watch(
+  () => props.transaction,
+  (newTransaction) => {
+    if (newTransaction) {
+      form.value = {
+        amount: newTransaction.amount.toString(),
+        categoryId: newTransaction.categoryId,
+        description: newTransaction.description,
+      };
+    } else {
+      form.value = {
+        amount: "",
+        categoryId: null,
+        description: "",
+      };
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
-  <form @submit.prevent="submitForm" class="transaction-form">
-    <div>
-      <label for="amount">Amount</label>
-      <input
-        id="amount"
-        v-model.number="form.amount"
-        type="number"
-        min="0"
-        step="0.01"
-        required
-        :disabled="disabled"
+  <div class="space-y-6">
+    <!-- Заголовок формы -->
+    <div class="text-center pb-4">
+      <HenaketIcon
+        :icon="transaction ? 'edit' : 'add_circle'"
+        size="48px"
+        :class="transaction ? 'text-blue-600' : 'text-green-600'"
+        class="mx-auto mb-3"
       />
+      <h3 class="text-xl font-semibold text-gray-800">
+        {{ transaction ? "Edit Transaction" : "Add New Transaction" }}
+      </h3>
+      <p class="text-gray-600 mt-1">
+        {{
+          transaction
+            ? "Update the transaction details"
+            : "Fill in the details below to add a new transaction"
+        }}
+      </p>
     </div>
-    <div>
-      <label for="category">Category</label>
-      <select
-        id="category"
-        v-model.number="form.categoryId"
-        required
-        :disabled="disabled"
-      >
-        <option :value="null" disabled>Select category</option>
-        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-          {{ cat.name }}
-        </option>
-      </select>
-    </div>
-    <div>
-      <label for="description">Description</label>
-      <input
-        id="description"
+
+    <!-- Ошибки -->
+    <HenaketAlert
+      v-if="error"
+      variant="error"
+      :title="error"
+      icon="error"
+      class="mb-4"
+    />
+
+    <!-- Поля формы -->
+    <div class="space-y-4">
+      <!-- Описание -->
+      <HenaketInputField
         v-model="form.description"
-        type="text"
-        placeholder="Enter description"
-        required
+        label="Description"
+        placeholder="Enter transaction description..."
         :disabled="disabled"
-      />
+        required
+      >
+        <template #prefix>
+          <HenaketIcon icon="description" size="20px" />
+        </template>
+      </HenaketInputField>
+
+      <!-- Сумма -->
+      <HenaketInputField
+        v-model="form.amount"
+        type="number"
+        label="Amount"
+        placeholder="0.00"
+        :disabled="disabled"
+        step="0.01"
+        min="0"
+        required
+      >
+        <template #prefix>
+          <HenaketIcon icon="payments" size="20px" />
+        </template>
+        <template #suffix>
+          <span class="text-gray-500">$</span>
+        </template>
+      </HenaketInputField>
+
+      <!-- Категория -->
+      <div class="space-y-2">
+        <label class="block text-sm font-medium text-gray-700">
+          Category *
+        </label>
+        <div class="relative">
+          <HenaketIcon
+            icon="category"
+            size="20px"
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          />
+          <select
+            v-model="form.categoryId"
+            :disabled="disabled"
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            required
+          >
+            <option :value="null" disabled>Select a category...</option>
+            <option
+              v-for="category in categories"
+              :key="category.id"
+              :value="category.id"
+            >
+              {{ category.name }}
+            </option>
+          </select>
+        </div>
+      </div>
     </div>
-    <div v-if="error" class="error-message">
-      {{ error }}
+
+    <!-- Информация о валидации -->
+    <HenaketInfoCard
+      v-if="
+        !isFormValid && (form.description || form.amount || form.categoryId)
+      "
+      icon="info"
+      title="Form Requirements"
+      content="Please fill in all fields: description, amount (greater than 0), and select a category."
+    />
+
+    <!-- Кнопки -->
+    <div class="flex gap-3 pt-4">
+      <button
+        @click="cancel"
+        :disabled="disabled"
+        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <HenaketIcon icon="close" size="20px" />
+        Cancel
+      </button>
+
+      <button
+        @click="submitForm"
+        :disabled="disabled || !isFormValid"
+        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <HenaketIcon :icon="transaction ? 'save' : 'add'" size="20px" />
+        {{ transaction ? "Save Changes" : "Add Transaction" }}
+      </button>
     </div>
-    <button
-      type="submit"
-      :disabled="disabled || !!error || !isFormValid"
-      :class="{ disabled: disabled || !!error || !isFormValid }"
-    >
-      {{ disabled ? "Adding..." : "Add Transaction" }}
-    </button>
-  </form>
+
+    <!-- Предпросмотр -->
+    <HenaketCard v-if="isFormValid" class="p-4 bg-green-50 border-green-200">
+      <div class="flex items-center gap-3">
+        <HenaketIcon icon="preview" size="24px" class="text-green-600" />
+        <div>
+          <h4 class="font-semibold text-green-800">Preview</h4>
+          <p class="text-green-700">
+            <strong>${{ parseFloat(form.amount).toFixed(2) }}</strong> -
+            {{ form.description }}
+            <span class="text-green-600">
+              ({{ categories.find((c) => c.id === form.categoryId)?.name }})
+            </span>
+          </p>
+        </div>
+      </div>
+    </HenaketCard>
+  </div>
 </template>
-
-<style scoped>
-.transaction-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.transaction-form div {
-  display: flex;
-  flex-direction: column;
-}
-
-.transaction-form label {
-  margin-bottom: 0.25rem;
-  font-weight: 500;
-}
-
-.transaction-form input,
-.transaction-form select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.error-message {
-  color: red;
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
-}
-
-button {
-  padding: 0.75rem;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-button:hover:not(.disabled) {
-  background: #2563eb;
-}
-
-button.disabled {
-  background: #ccc;
-  color: #888;
-  cursor: not-allowed;
-}
-</style>

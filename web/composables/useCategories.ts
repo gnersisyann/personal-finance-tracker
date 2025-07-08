@@ -20,15 +20,21 @@ async function loadCategories() {
   }
 }
 
-export function getCategory(id: number): string {
+export function getCategory(id: number): Category | undefined {
+  return categories.value.find((category) => category.id === id);
+}
+
+export function getCategoryName(id: number): string {
   const category = categories.value.find((category) => category.id === id);
   return category ? category.name : "Unknown";
 }
 
-export async function addCategory(name: string) {
+export async function addCategory(
+  categoryData: Pick<Category, "name" | "color">
+) {
   try {
     error.value = null;
-    const newCategory = await categoriesApi.create({ name });
+    const newCategory = await categoriesApi.create(categoryData);
     categories.value.push(newCategory);
     return newCategory;
   } catch (err) {
@@ -54,9 +60,10 @@ export async function removeCategory(id: number) {
   }
 }
 
+// Исправляем тип для updateCategory
 export async function updateCategory(
   id: number,
-  categoryData: Pick<Category, "name">
+  categoryData: Partial<Pick<Category, "name" | "color">>
 ) {
   try {
     error.value = null;
@@ -81,6 +88,7 @@ export function useCategories() {
     error: readonly(error),
     loadCategories,
     getCategory,
+    getCategoryName,
     addCategory,
     removeCategory,
     updateCategory,

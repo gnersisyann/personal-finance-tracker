@@ -1,7 +1,23 @@
 <template>
-  <div>
+  <HenaketContainer>
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
-  </div>
+  </HenaketContainer>
 </template>
+
+<script setup>
+// Добавим базовые мета-теги для SEO
+useHead({
+  title: "Personal Finance Tracker",
+  meta: [
+    { name: "description", content: "Track your personal finances with ease" },
+  ],
+  link: [
+    {
+      rel: "stylesheet",
+      href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+    },
+  ],
+});
+</script>
