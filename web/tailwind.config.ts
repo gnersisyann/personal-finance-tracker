@@ -164,7 +164,6 @@ export default {
 
         yesem: {
           primary: "#004FA3",
-
           blue: {
             600: "#2677CE",
           },
