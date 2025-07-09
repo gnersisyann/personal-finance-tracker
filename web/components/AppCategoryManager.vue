@@ -128,24 +128,27 @@ const colorPresets = [
   <div class="space-y-6">
     <!-- Кнопки управления -->
     <div class="flex flex-wrap gap-3">
-      <button
+      <HenaketButton
         @click="openAddModal"
         :disabled="isSubmitting"
-        class="inline-flex items-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        variant="primary"
+        size="regular"
       >
         <HenaketIcon icon="add" size="20px" />
         Add Category
-      </button>
+      </HenaketButton>
 
-      <button
+      <HenaketButton
         v-if="selectedIds.length > 0"
         @click="showDeleteConfirmation"
         :disabled="isSubmitting"
-        class="inline-flex items-center gap-2 px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        variant="outlined"
+        color="red"
+        size="regular"
       >
         <HenaketIcon icon="delete" size="20px" />
         Delete Selected ({{ selectedIds.length }})
-      </button>
+      </HenaketButton>
     </div>
 
     <!-- Список категорий -->
@@ -256,19 +259,23 @@ const colorPresets = [
 
           <!-- Кнопки -->
           <div class="flex gap-3 pt-4">
-            <button
+            <HenaketButton
               @click="closeAddModal"
               :disabled="isSubmitting"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="outlined"
+              size="regular"
+              class="flex-1"
             >
               <HenaketIcon icon="close" size="20px" />
               Cancel
-            </button>
+            </HenaketButton>
 
-            <button
+            <HenaketButton
               @click="submitAddCategory"
               :disabled="isSubmitting || !newCategoryName.trim()"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              size="regular"
+              class="flex-1"
             >
               <HenaketIcon v-if="!isSubmitting" icon="add" size="20px" />
               <div
@@ -276,7 +283,7 @@ const colorPresets = [
                 class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
               ></div>
               {{ isSubmitting ? "Adding..." : "Add Category" }}
-            </button>
+            </HenaketButton>
           </div>
         </div>
       </template>
@@ -286,17 +293,19 @@ const colorPresets = [
     <HenaketModal v-model="deleteModal">
       <template #title>
         <div class="flex items-center gap-3">
-          <HenaketIcon icon="warning" size="24px" class="text-red-600" />
-          {{
-            deleteData?.isMultiple
-              ? "Delete Multiple Categories"
-              : "Delete Category"
-          }}
+          <HenaketIcon icon="warning" size="28px" class="text-red-600" />
+          <span class="text-xl font-semibold text-red-700">
+            {{
+              deleteData?.isMultiple
+                ? "Delete Multiple Categories"
+                : "Delete Category"
+            }}
+          </span>
         </div>
       </template>
 
       <template #description>
-        <div class="space-y-6">
+        <div class="max-w-full space-y-6">
           <!-- Предупреждение -->
           <HenaketAlert
             variant="warning"
@@ -318,7 +327,6 @@ const colorPresets = [
                   : "Category to Delete:"
               }}
             </h4>
-
             <div class="space-y-3 max-h-60 overflow-y-auto">
               <HenaketCard
                 v-for="category in deleteData.categories"
@@ -339,11 +347,14 @@ const colorPresets = [
                       {{ category.color || "#3b82f6" }}
                     </div>
                   </div>
-                  <HenaketIcon icon="delete" size="20px" class="text-red-500" />
+                  <HenaketIcon
+                    icon="delete"
+                    size="20px"
+                    class="text-red-500 mb-4"
+                  />
                 </div>
               </HenaketCard>
             </div>
-
             <!-- Статистика удаления -->
             <HenaketCard class="p-4 bg-gray-50">
               <div class="space-y-2">
@@ -351,13 +362,13 @@ const colorPresets = [
                   <span class="text-gray-600 font-medium"
                     >Categories to delete:</span
                   >
-                  <HenaketBadge backgroundColor="#ef4444">
+                  <HenaketBadge class="mr-44" backgroundColor="#ef4444">
                     {{ deleteData.count }}
                   </HenaketBadge>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-gray-600 font-medium">Impact:</span>
-                  <span class="text-red-600 font-semibold">
+                  <span class="ml-4 text-red-600 font-semibold">
                     All related transactions will be removed
                   </span>
                 </div>
@@ -383,7 +394,6 @@ const colorPresets = [
               title="What happens when you delete categories?"
               content="All transactions associated with these categories will also be permanently deleted. This action affects your financial statistics and cannot be undone."
             />
-
             <HenaketInfoCard
               icon="tips_and_updates"
               title="Alternative Action"
@@ -393,19 +403,23 @@ const colorPresets = [
 
           <!-- Кнопки действий -->
           <div class="flex gap-3 pt-4">
-            <button
+            <HenaketButton
               @click="cancelDelete"
               :disabled="isDeleting"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              variant="outlined"
+              size="regular"
+              class="flex-1"
             >
               <HenaketIcon icon="close" size="20px" />
               Cancel
-            </button>
+            </HenaketButton>
 
-            <button
+            <HenaketButton
               @click="confirmDelete"
               :disabled="isDeleting || !deleteData"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              variant="danger"
+              size="regular"
+              class="flex-1"
             >
               <HenaketIcon v-if="!isDeleting" icon="delete" size="20px" />
               <div
@@ -419,7 +433,7 @@ const colorPresets = [
                   ? `Delete ${deleteData.count} Categories`
                   : "Delete Category"
               }}
-            </button>
+            </HenaketButton>
           </div>
         </div>
       </template>

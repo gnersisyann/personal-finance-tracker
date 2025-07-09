@@ -12,14 +12,15 @@
         </button>
         <h1 class="text-2xl font-bold text-gray-800">Transactions</h1>
       </div>
-
-      <button
+      <HenaketButton
+        variant="primary"
+        size="regular"
         @click="showAddModal = true"
-        class="inline-flex items-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       >
         <HenaketIcon icon="add" size="20px" />
+
         Add Transaction
-      </button>
+      </HenaketButton>
     </div>
 
     <!-- Статистика -->
@@ -66,20 +67,22 @@
       </template>
 
       <template #description>
-        <AppTransactionForm
-          :categories="categories"
-          @add="handleAddTransaction"
-          @cancel="showAddModal = false"
-          :disabled="isSubmitting"
-        />
+        <div class="w-[400px] max-w-full flex flex-col justify-between">
+          <AppTransactionForm
+            :categories="categories"
+            @add="handleAddTransaction"
+            @cancel="showAddModal = false"
+            :disabled="isSubmitting"
+          />
 
-        <div
-          v-if="error"
-          class="mt-4 p-3 bg-red-50 border border-red-200 rounded"
-        >
-          <div class="flex items-center gap-2">
-            <HenaketIcon icon="error" size="16px" class="text-red-600" />
-            <span class="text-red-700 text-sm">{{ error }}</span>
+          <div
+            v-if="error"
+            class="mt-4 p-3 bg-red-50 border border-red-200 rounded"
+          >
+            <div class="flex items-center gap-2">
+              <HenaketIcon icon="error" size="16px" class="text-red-600" />
+              <span class="text-red-700 text-sm">{{ error }}</span>
+            </div>
           </div>
         </div>
       </template>

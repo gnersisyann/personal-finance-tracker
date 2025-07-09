@@ -1,5 +1,5 @@
 <template>
-  <HenaketViewport variant="standard" class="min-h-screen bg-gray-50">
+  <HenaketViewport variant="standard" class="min-h-screen bg-gray-50 space-y-6">
     <div class="py-6">
       <slot />
     </div>

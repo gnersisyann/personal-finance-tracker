@@ -6,7 +6,8 @@ export type HenaketButtonVariants =
   | "yesem"
   | "toTop"
   | "floating"
-  | "icon";
+  | "icon"
+  | "danger";
 
 export type HenaketButtonSizes = "regular" | "large";
 

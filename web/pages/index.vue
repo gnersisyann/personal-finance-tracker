@@ -1,60 +1,56 @@
 <template>
   <div class="space-y-8">
     <!-- Hero секция -->
-    <HenaketViewport class="py-12">
-      <div class="text-center space-y-6">
-        <HenaketIcon
-          icon="account_balance_wallet"
-          size="80px"
-          class="text-blue-600 mx-auto"
-        />
-        <div class="space-y-4">
-          <h1 class="text-4xl md:text-5xl font-bold text-gray-800">
-            Personal Finance Tracker
-          </h1>
-          <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-            Take control of your financial future with our comprehensive expense
-            tracking system. Monitor spending, categorize transactions, and gain
-            insights into your financial habits.
-          </p>
-        </div>
-
-        <!-- Quick Stats -->
-        <div
-          class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto pt-6"
-        >
-          <HenaketCard class="p-4 text-center">
-            <HenaketIcon
-              icon="trending_up"
-              size="32px"
-              class="text-green-600 mx-auto mb-2"
-            />
-            <div class="text-2xl font-bold text-gray-800">Smart</div>
-            <div class="text-sm text-gray-600">Analytics</div>
-          </HenaketCard>
-
-          <HenaketCard class="p-4 text-center">
-            <HenaketIcon
-              icon="security"
-              size="32px"
-              class="text-blue-600 mx-auto mb-2"
-            />
-            <div class="text-2xl font-bold text-gray-800">Secure</div>
-            <div class="text-sm text-gray-600">Data Protection</div>
-          </HenaketCard>
-
-          <HenaketCard class="p-4 text-center">
-            <HenaketIcon
-              icon="speed"
-              size="32px"
-              class="text-purple-600 mx-auto mb-2"
-            />
-            <div class="text-2xl font-bold text-gray-800">Fast</div>
-            <div class="text-sm text-gray-600">Performance</div>
-          </HenaketCard>
-        </div>
+    <div class="text-center space-y-6">
+      <HenaketIcon
+        icon="account_balance_wallet"
+        size="80px"
+        class="text-blue-600 mx-auto"
+      />
+      <div class="space-y-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-800">
+          Personal Finance Tracker
+        </h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Take control of your financial future with our comprehensive expense
+          tracking system. Monitor spending, categorize transactions, and gain
+          insights into your financial habits.
+        </p>
       </div>
-    </HenaketViewport>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto pt-6">
+        <HenaketCard class="p-4 text-center cursor-default">
+          <HenaketIcon
+            icon="trending_up"
+            size="32px"
+            class="text-green-600 mx-auto mb-2"
+          />
+          <div class="text-2xl font-bold text-gray-800">Smart</div>
+          <div class="text-sm text-gray-600">Analytics</div>
+        </HenaketCard>
+
+        <HenaketCard class="p-4 text-center cursor-default">
+          <HenaketIcon
+            icon="security"
+            size="32px"
+            class="text-blue-600 mx-auto mb-2"
+          />
+          <div class="text-2xl font-bold text-gray-800">Secure</div>
+          <div class="text-sm text-gray-600">Data Protection</div>
+        </HenaketCard>
+
+        <HenaketCard class="p-4 text-center cursor-default">
+          <HenaketIcon
+            icon="speed"
+            size="32px"
+            class="text-purple-600 mx-auto mb-2"
+          />
+          <div class="text-2xl font-bold text-gray-800">Fast</div>
+          <div class="text-sm text-gray-600">Performance</div>
+        </HenaketCard>
+      </div>
+    </div>
 
     <!-- Main Navigation Cards -->
     <HenaketViewport>
@@ -168,7 +164,7 @@
     <!-- Features Section -->
     <HenaketViewport class="py-12">
       <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold text-gray-800 mb-4">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4 mt-16">
           Why Choose Our Finance Tracker?
         </h2>
         <p class="text-gray-600 max-w-2xl mx-auto">
@@ -178,7 +174,9 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <HenaketCard class="p-6 text-center hover:shadow-md transition-shadow">
+        <HenaketCard
+          class="p-6 text-center hover:shadow-md transition-shadow cursor-default"
+        >
           <HenaketIcon
             icon="analytics"
             size="48px"
@@ -193,7 +191,9 @@
           </p>
         </HenaketCard>
 
-        <HenaketCard class="p-6 text-center hover:shadow-md transition-shadow">
+        <HenaketCard
+          class="p-6 text-center hover:shadow-md transition-shadow cursor-default"
+        >
           <HenaketIcon
             icon="cloud_sync"
             size="48px"
@@ -208,7 +208,9 @@
           </p>
         </HenaketCard>
 
-        <HenaketCard class="p-6 text-center hover:shadow-md transition-shadow">
+        <HenaketCard
+          class="p-6 text-center hover:shadow-md transition-shadow cursor-default"
+        >
           <HenaketIcon
             icon="shield"
             size="48px"
@@ -223,7 +225,9 @@
           </p>
         </HenaketCard>
 
-        <HenaketCard class="p-6 text-center hover:shadow-md transition-shadow">
+        <HenaketCard
+          class="p-6 text-center hover:shadow-md transition-shadow cursor-default"
+        >
           <HenaketIcon
             icon="mobile_friendly"
             size="48px"
@@ -236,7 +240,9 @@
           </p>
         </HenaketCard>
 
-        <HenaketCard class="p-6 text-center hover:shadow-md transition-shadow">
+        <HenaketCard
+          class="p-6 text-center hover:shadow-md transition-shadow cursor-default"
+        >
           <HenaketIcon
             icon="receipt"
             size="48px"
@@ -251,7 +257,9 @@
           </p>
         </HenaketCard>
 
-        <HenaketCard class="p-6 text-center hover:shadow-md transition-shadow">
+        <HenaketCard
+          class="p-6 text-center hover:shadow-md transition-shadow cursor-default"
+        >
           <HenaketIcon
             icon="category"
             size="48px"
@@ -268,68 +276,46 @@
       </div>
     </HenaketViewport>
 
-    <!-- Current Overview -->
-    <HenaketViewport class="py-8">
-      <HenaketCard class="p-8">
-        <div class="text-center mb-6">
-          <h3 class="text-2xl font-semibold text-gray-800 mb-2">
-            Your Financial Overview
-          </h3>
-          <p class="text-gray-600">
-            Get a quick snapshot of your current financial status
-          </p>
-        </div>
-
-        <ClientOnly>
-          <AppStats />
-          <template #fallback>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div v-for="i in 4" :key="i" class="animate-pulse">
-                <div class="h-20 bg-gray-200 rounded-lg"></div>
-              </div>
-            </div>
-          </template>
-        </ClientOnly>
-      </HenaketCard>
-    </HenaketViewport>
-
     <!-- Call to Action -->
     <HenaketViewport class="py-12">
       <HenaketCard
-        class="p-12 text-center bg-gradient-to-r from-blue-50 to-purple-50"
+        class="p-12 text-center bg-gradient-to-r from-blue-50 to-purple-50 cursor-default"
       >
         <HenaketIcon
           icon="rocket_launch"
           size="64px"
-          class="text-blue-600 mx-auto mb-6"
+          class="text-blue-600 mx-auto mb-6 mt-4"
         />
         <h3 class="text-3xl font-bold text-gray-800 mb-4">
           Ready to Take Control?
         </h3>
-        <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p class="text-gray-600 mb-8 max-w-2xl mx-auto mt-8">
           Start your financial journey today. Create your first category and
           begin tracking your expenses to gain valuable insights into your
           spending habits.
         </p>
 
         <div
-          class="flex flex-col sm:flex-row gap-4 justify-center items-center"
+          class="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8"
         >
-          <button
+          <HenaketButton
+            variant="primary"
+            size="large"
             @click="navigateToCategories"
-            class="inline-flex items-center gap-2 px-6 py-3 border border-transparent rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors font-medium"
+            class="whitespace-normal max-w-xs"
           >
             <HenaketIcon icon="add_circle" size="20px" />
-            Create First Category
-          </button>
+            Create Category
+          </HenaketButton>
 
-          <button
+          <HenaketButton
+            variant="outlined"
+            size="large"
             @click="navigateToTransactions"
-            class="inline-flex items-center gap-2 px-6 py-3 border border-blue-300 rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors font-medium"
           >
             <HenaketIcon icon="trending_up" size="20px" />
             View Analytics
-          </button>
+          </HenaketButton>
         </div>
       </HenaketCard>
     </HenaketViewport>

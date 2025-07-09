@@ -116,6 +116,12 @@ function removeButtonFocus() {
     active:bg-blue-1000 active:border-blue-1100;
 }
 
+.henaket-button.danger {
+  @apply bg-red-600 text-white border-red-700
+    hover:bg-red-700 hover:border-red-800
+    active:bg-red-800 active:border-red-900;
+}
+
 .henaket-button.regular {
   @apply text-sm px-3 md:px-4 py-2;
 }

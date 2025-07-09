@@ -179,42 +179,33 @@ function clearFilters() {
         </HenaketBadge>
       </div>
 
-      <div class="flex flex-wrap gap-2">
-        <button
-          @click="showSearch = !showSearch"
-          :class="[
-            'inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm font-medium transition-colors',
-            showSearch
-              ? 'bg-blue-50 border-blue-300 text-blue-700'
-              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
-          ]"
-        >
-          <HenaketIcon icon="search" size="18px" />
-          Search
-        </button>
+      <HenaketButton
+        @click="showSearch = !showSearch"
+        :variant="showSearch ? 'primary' : 'outlined'"
+        size="regular"
+      >
+        <HenaketIcon icon="search" size="18px" />
+        Search
+      </HenaketButton>
 
-        <button
-          @click="showFilter = !showFilter"
-          :class="[
-            'inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm font-medium transition-colors',
-            showFilter
-              ? 'bg-blue-50 border-blue-300 text-blue-700'
-              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
-          ]"
-        >
-          <HenaketIcon icon="filter_list" size="18px" />
-          Filter
-        </button>
+      <HenaketButton
+        @click="showFilter = !showFilter"
+        :variant="showFilter ? 'primary' : 'outlined'"
+        size="regular"
+      >
+        <HenaketIcon icon="filter_list" size="18px" />
+        Filter
+      </HenaketButton>
 
-        <button
-          v-if="search || selectedCategory || startDate || endDate"
-          @click="clearFilters"
-          class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
-          <HenaketIcon icon="clear" size="18px" />
-          Clear
-        </button>
-      </div>
+      <HenaketButton
+        v-if="search || selectedCategory || startDate || endDate"
+        @click="clearFilters"
+        variant="outlined"
+        size="regular"
+      >
+        <HenaketIcon icon="clear" size="18px" />
+        Clear
+      </HenaketButton>
     </div>
 
     <!-- Поиск -->
@@ -309,8 +300,8 @@ function clearFilters() {
       v-else-if="filteredTransactions.length"
       class="overflow-hidden"
     >
-      <div class="overflow-x-auto">
-        <table class="w-full">
+      <div class="overflow-x-auto w-full">
+        <table class="min-w-full">
           <thead class="bg-gray-50">
             <tr>
               <th
@@ -387,7 +378,7 @@ function clearFilters() {
     </HenaketCard>
 
     <!-- Пустое состояние -->
-    <HenaketCard v-else class="p-12">
+    <HenaketCard v-else class="p-12 justify-center">
       <div class="text-center space-y-4">
         <HenaketIcon
           icon="receipt_long"
@@ -525,19 +516,23 @@ function clearFilters() {
 
           <!-- Кнопки действий -->
           <div class="flex gap-3 pt-4">
-            <button
+            <HenaketButton
               @click="cancelDelete"
               :disabled="isDeleting"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              variant="outlined"
+              size="regular"
+              class="flex-1"
             >
               <HenaketIcon icon="close" size="20px" />
               Cancel
-            </button>
+            </HenaketButton>
 
-            <button
+            <HenaketButton
               @click="confirmDelete"
               :disabled="isDeleting || !transactionToDelete"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              variant="danger"
+              size="regular"
+              class="flex-1"
             >
               <HenaketIcon v-if="!isDeleting" icon="delete" size="20px" />
               <div
@@ -545,7 +540,7 @@ function clearFilters() {
                 class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
               ></div>
               {{ isDeleting ? "Deleting..." : "Delete Transaction" }}
-            </button>
+            </HenaketButton>
           </div>
         </div>
       </template>
