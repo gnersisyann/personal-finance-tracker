@@ -71,7 +71,6 @@ function cancel() {
   emit("cancel");
 }
 
-// Сброс формы при изменении транзакции
 watch(
   () => props.transaction,
   (newTransaction) => {
@@ -94,9 +93,7 @@ watch(
 </script>
 
 <template>
-  <!-- Фиксируем минимальную высоту контейнера для предотвращения изменения размера -->
   <div class="space-y-6 min-h-[500px]">
-    <!-- Заголовок формы -->
     <div class="text-center pb-4">
       <HenaketIcon
         :icon="transaction ? 'edit' : 'add_circle'"
@@ -116,7 +113,6 @@ watch(
       </p>
     </div>
 
-    <!-- Ошибки -->
     <HenaketAlert
       v-if="error"
       variant="error"
@@ -125,9 +121,7 @@ watch(
       class="mb-4"
     />
 
-    <!-- Поля формы -->
     <div class="space-y-4">
-      <!-- Описание -->
       <HenaketInputField
         v-model="form.description"
         label="Description"
@@ -140,7 +134,6 @@ watch(
         </template>
       </HenaketInputField>
 
-      <!-- Сумма - Фиксируем ширину для предотвращения изменения размера -->
       <div class="w-full">
         <HenaketInputField
           v-model="form.amount"
@@ -162,7 +155,6 @@ watch(
         </HenaketInputField>
       </div>
 
-      <!-- Категория -->
       <div class="space-y-2">
         <label class="block text-sm font-medium text-gray-700">
           Category *
@@ -192,7 +184,6 @@ watch(
       </div>
     </div>
 
-    <!-- Информация о валидации - фиксированная высота -->
     <div class="min-h-[60px]">
       <HenaketInfoCard
         v-if="
@@ -204,7 +195,6 @@ watch(
       />
     </div>
 
-    <!-- Предпросмотр - фиксированная высота -->
     <div class="min-h-[80px]">
       <HenaketCard v-if="isFormValid" class="p-4 bg-green-50 border-green-200">
         <div class="flex items-center gap-3">
@@ -226,7 +216,6 @@ watch(
       </HenaketCard>
     </div>
 
-    <!-- Кнопки -->
     <div class="flex gap-3 pt-4">
       <button
         @click="cancel"

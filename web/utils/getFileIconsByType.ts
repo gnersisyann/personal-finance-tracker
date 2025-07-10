@@ -1,18 +1,10 @@
-// filepath: c:\Users\garnik.nersisyan\Desktop\NEW\henaket-web-guide\utils\getFileIconsByType.ts
-/**
- * Определяет имя иконки файла по типу/расширению
- * @param fileType - тип файла или расширение
- * @returns имя файла иконки
- */
 export function getFileIconsByType(fileType: string): string {
   const type = fileType.toLowerCase();
 
-  // PDF файлы
   if (type === "pdf" || type === "application/pdf") {
     return "file-pdf";
   }
 
-  // Word документы
   if (
     type === "doc" ||
     type === "docx" ||
@@ -23,7 +15,6 @@ export function getFileIconsByType(fileType: string): string {
     return "file-word";
   }
 
-  // Excel таблицы
   if (
     type === "xls" ||
     type === "xlsx" ||
@@ -33,7 +24,6 @@ export function getFileIconsByType(fileType: string): string {
     return "file-excel";
   }
 
-  // PowerPoint презентации
   if (
     type === "ppt" ||
     type === "pptx" ||
@@ -44,7 +34,6 @@ export function getFileIconsByType(fileType: string): string {
     return "file-powerpoint";
   }
 
-  // Изображения
   if (
     type === "jpg" ||
     type === "jpeg" ||
@@ -57,7 +46,6 @@ export function getFileIconsByType(fileType: string): string {
     return "file-image";
   }
 
-  // Видео
   if (
     type === "mp4" ||
     type === "avi" ||
@@ -69,7 +57,6 @@ export function getFileIconsByType(fileType: string): string {
     return "file-video";
   }
 
-  // Аудио
   if (
     type === "mp3" ||
     type === "wav" ||
@@ -80,7 +67,6 @@ export function getFileIconsByType(fileType: string): string {
     return "file-audio";
   }
 
-  // Архивы
   if (
     type === "zip" ||
     type === "rar" ||
@@ -91,7 +77,6 @@ export function getFileIconsByType(fileType: string): string {
     return "file-archive";
   }
 
-  // Текстовые файлы
   if (
     type === "txt" ||
     type === "rtf" ||
@@ -101,7 +86,6 @@ export function getFileIconsByType(fileType: string): string {
     return "file-text";
   }
 
-  // Код
   if (
     type === "js" ||
     type === "ts" ||
@@ -114,6 +98,5 @@ export function getFileIconsByType(fileType: string): string {
     return "file-code";
   }
 
-  // По умолчанию
   return "file-default";
 }

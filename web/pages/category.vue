@@ -104,7 +104,6 @@
 <script lang="ts" setup>
 const categoryManager = ref();
 
-// Навигация
 const navigateHome = () => {
   navigateTo("/");
 };
@@ -116,7 +115,6 @@ const scrollToManager = () => {
   });
 };
 
-// SEO
 useHead({
   title: "Categories - Personal Finance Tracker",
   meta: [

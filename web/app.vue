@@ -7,7 +7,6 @@
 </template>
 
 <script setup>
-// Добавим базовые мета-теги для SEO
 useHead({
   title: "Personal Finance Tracker",
   meta: [

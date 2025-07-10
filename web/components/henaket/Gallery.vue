@@ -80,10 +80,8 @@ function openLightBox(index: number) {
 }
 
 function getImageSrc(image: any): string {
-  // Для совместимости с разными источниками изображений
   if (image.url) return image.url;
   if (image.id && typeof image.id === "string") {
-    // Предполагаем, что это Directus ID
     return `/assets/${image.id}`;
   }
   return image.id || "";

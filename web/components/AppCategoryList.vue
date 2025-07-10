@@ -83,9 +83,7 @@ const isPartiallySelected = computed(
 
 <template>
   <div class="space-y-4">
-    <!-- Поиск и массовые действия -->
     <div class="space-y-4">
-      <!-- Поиск -->
       <HenaketInputField
         v-model="search"
         label="Search categories"
@@ -104,7 +102,6 @@ const isPartiallySelected = computed(
         </template>
       </HenaketInputField>
 
-      <!-- Массовые действия -->
       <div
         v-if="filteredCategories.length > 0"
         class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -129,7 +126,6 @@ const isPartiallySelected = computed(
       </div>
     </div>
 
-    <!-- Состояния загрузки и ошибок -->
     <HenaketAlert
       v-if="isLoading"
       variant="info"
@@ -145,7 +141,6 @@ const isPartiallySelected = computed(
       icon="error"
     />
 
-    <!-- Список категорий -->
     <div v-else-if="filteredCategories.length > 0" class="space-y-2">
       <HenaketCard
         v-for="category in filteredCategories"
@@ -154,7 +149,6 @@ const isPartiallySelected = computed(
         :class="{ 'ring-2 ring-blue-500': selectedIds.includes(category.id) }"
       >
         <div class="flex items-center justify-between">
-          <!-- Левая часть: чекбокс и информация о категории -->
           <div class="flex items-center gap-3 flex-1">
             <HenaketCheckbox
               :name="`category-${category.id}`"
@@ -164,13 +158,11 @@ const isPartiallySelected = computed(
             />
 
             <div class="flex items-center gap-3 flex-1">
-              <!-- Цветной индикатор -->
               <div
                 class="w-4 h-4 rounded-full flex-shrink-0"
                 :style="{ backgroundColor: category.color || '#3b82f6' }"
               ></div>
 
-              <!-- Название категории -->
               <div v-if="editingId !== category.id" class="flex-1">
                 <div class="font-medium text-gray-800">{{ category.name }}</div>
                 <div class="text-xs text-gray-500">
@@ -178,7 +170,6 @@ const isPartiallySelected = computed(
                 </div>
               </div>
 
-              <!-- Форма редактирования -->
               <div v-else class="flex-1">
                 <div class="space-y-2">
                   <div class="flex items-center gap-2">
@@ -206,10 +197,8 @@ const isPartiallySelected = computed(
             </div>
           </div>
 
-          <!-- Правая часть: действия -->
           <div class="flex items-center gap-1">
             <template v-if="editingId !== category.id">
-              <!-- Кнопка редактирования -->
               <HenaketButton
                 variant="icon"
                 @click="startEdit(category.id, category.name, category.color)"
@@ -219,7 +208,6 @@ const isPartiallySelected = computed(
             </template>
 
             <template v-else>
-              <!-- Кнопки сохранения и отмены -->
               <HenaketButton
                 variant="icon"
                 @click="saveEdit(category.id)"
@@ -235,7 +223,6 @@ const isPartiallySelected = computed(
           </div>
         </div>
 
-        <!-- Дополнительная информация -->
         <div
           v-if="selectedIds.includes(category.id)"
           class="mt-3 pt-3 border-t border-gray-200"
@@ -248,7 +235,6 @@ const isPartiallySelected = computed(
       </HenaketCard>
     </div>
 
-    <!-- Пустое состояние -->
     <HenaketCard v-else-if="!isLoading && !error" class="p-8">
       <div class="text-center space-y-4">
         <HenaketIcon
@@ -276,7 +262,6 @@ const isPartiallySelected = computed(
       </div>
     </HenaketCard>
 
-    <!-- Информация о выделенных категориях -->
     <HenaketInfoCard
       v-if="selectedIds.length > 0"
       icon="info"
@@ -286,7 +271,6 @@ const isPartiallySelected = computed(
       } selected. Use the delete button above to remove selected categories.`"
     />
 
-    <!-- Быстрые действия -->
     <div v-if="filteredCategories.length > 0" class="flex flex-wrap gap-2 pt-2">
       <HenaketButton variant="outlined" @click="selectAll">
         <HenaketIcon icon="select_all" size="16px" />

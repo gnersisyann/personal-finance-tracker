@@ -119,7 +119,6 @@ const autoPlayTimer = ref<NodeJS.Timeout | null>(null);
 
 const currentSlide = computed(() => props.slides[currentIndex.value]);
 
-// Управление прокруткой страницы
 watch(visible, (newVisible) => {
   if (newVisible) {
     disableScrolling();
@@ -132,7 +131,6 @@ watch(visible, (newVisible) => {
   }
 });
 
-// Следим за изменением слайда
 watch(currentIndex, () => {
   imageLoading.value = true;
   if (props.autoPlay && visible.value) {
@@ -140,7 +138,6 @@ watch(currentIndex, () => {
   }
 });
 
-// Клавиатурная навигация
 onMounted(() => {
   document.addEventListener("keydown", handleKeydown);
 });
@@ -180,7 +177,6 @@ function nextSlide() {
   if (currentIndex.value < props.slides.length - 1) {
     currentIndex.value++;
   } else if (props.autoPlay) {
-    // В режиме автопроигрывания возвращаемся к началу
     currentIndex.value = 0;
   }
 }

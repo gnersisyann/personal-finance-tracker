@@ -60,7 +60,6 @@ export async function removeCategory(id: number) {
   }
 }
 
-// Исправляем тип для updateCategory
 export async function updateCategory(
   id: number,
   categoryData: Partial<Pick<Category, "name" | "color">>

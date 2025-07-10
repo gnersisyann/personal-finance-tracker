@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Заголовок страницы с навигацией -->
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-4">
         <button
@@ -23,7 +22,6 @@
       </HenaketButton>
     </div>
 
-    <!-- Статистика -->
     <div class="p-6 bg-white rounded-lg border border-gray-200 shadow">
       <div class="flex items-center gap-3 mb-4">
         <HenaketIcon icon="analytics" size="24px" class="text-blue-600" />
@@ -40,7 +38,6 @@
       </ClientOnly>
     </div>
 
-    <!-- Список транзакций -->
     <ClientOnly>
       <AppTransactionList :categories="categories" :disabled="isSubmitting" />
       <template #fallback>
@@ -57,7 +54,6 @@
       </template>
     </ClientOnly>
 
-    <!-- Модальное окно добавления транзакции -->
     <HenaketModal v-model="showAddModal">
       <template #title>
         <div class="flex items-center gap-3">
@@ -88,7 +84,6 @@
       </template>
     </HenaketModal>
 
-    <!-- Дополнительная информация -->
     <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
       <div class="flex items-start gap-3">
         <HenaketIcon
@@ -111,26 +106,21 @@
 <script lang="ts" setup>
 import type { Transaction } from "~/types";
 
-// Отключаем SSR для этой страницы
 definePageMeta({
   ssr: false,
 });
 
-// Состояние
 const showAddModal = ref(false);
 const isSubmitting = ref(false);
 const error = ref("");
 
-// Загружаем категории и транзакции
 const { categories, loadCategories } = useCategories();
 const { addTransaction } = useTransactions();
 
-// Загружаем данные при монтировании
 onMounted(async () => {
   await loadCategories();
 });
 
-// Обработка добавления транзакции
 async function handleAddTransaction(
   transactionData: Pick<Transaction, "amount" | "categoryId" | "description">
 ) {
@@ -149,12 +139,10 @@ async function handleAddTransaction(
   }
 }
 
-// Навигация
 const navigateHome = () => {
   navigateTo("/");
 };
 
-// SEO
 useHead({
   title: "Transactions - Personal Finance Tracker",
   meta: [

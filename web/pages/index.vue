@@ -340,7 +340,6 @@
 </template>
 
 <script lang="ts" setup>
-// Навигация
 const navigateToCategories = () => {
   navigateTo("/category");
 };
@@ -349,7 +348,6 @@ const navigateToTransactions = () => {
   navigateTo("/transactions");
 };
 
-// SEO
 useHead({
   title: "Personal Finance Tracker - Take Control of Your Money",
   meta: [

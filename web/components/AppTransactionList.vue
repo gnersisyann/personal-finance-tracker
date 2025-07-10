@@ -29,7 +29,6 @@ const isModalOpen = ref(false);
 const editingTransaction = ref<Transaction | null>(null);
 const error = ref("");
 
-// Добавляем состояние для модального окна удаления
 const deleteModal = ref(false);
 const transactionToDelete = ref<Transaction | null>(null);
 const isDeleting = ref(false);
@@ -37,12 +36,10 @@ const isDeleting = ref(false);
 const search = ref("");
 const isSubmitting = ref(false);
 
-// Загружаем транзакции при монтировании
 onMounted(async () => {
   await loadTransactions();
 });
 
-// Перезагружаем транзакции при изменении фильтров
 watch([selectedCategory, startDate, endDate, search], async () => {
   await loadTransactions({
     categoryId: selectedCategory.value || undefined,
@@ -52,13 +49,11 @@ watch([selectedCategory, startDate, endDate, search], async () => {
   });
 });
 
-// Фильтрация транзакций (клиентская фильтрация для дополнительной гибкости)
 const filteredTransactions = computed(() => {
   let filtered = transactions.value || [];
   return filtered;
 });
 
-// Форматирование данных для таблицы
 const tableData = computed(() => {
   return filteredTransactions.value.map((transaction) => {
     const category = props.categories.find(
@@ -77,7 +72,6 @@ const tableData = computed(() => {
   });
 });
 
-// Computed для данных удаляемой транзакции с проверками на null
 const deleteTransactionData = computed(() => {
   if (!transactionToDelete.value) return null;
 
@@ -123,7 +117,6 @@ async function handleEditSubmit(
   }
 }
 
-// Новые функции для модального окна удаления
 function showDeleteConfirmation(transaction: Transaction) {
   transactionToDelete.value = transaction;
   deleteModal.value = true;
@@ -163,7 +156,6 @@ function clearFilters() {
 
 <template>
   <div class="space-y-6">
-    <!-- Заголовок с кнопками управления -->
     <div
       class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
     >
@@ -208,7 +200,6 @@ function clearFilters() {
       </HenaketButton>
     </div>
 
-    <!-- Поиск -->
     <HenaketCard v-if="showSearch" class="p-4">
       <HenaketInputField
         v-model="search"
@@ -221,7 +212,6 @@ function clearFilters() {
       </HenaketInputField>
     </HenaketCard>
 
-    <!-- Фильтры -->
     <HenaketCard v-if="showFilter" class="p-4">
       <div class="space-y-4">
         <div class="flex items-center gap-3 mb-4">
@@ -230,7 +220,6 @@ function clearFilters() {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Категория -->
           <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700"
               >Category:</label
@@ -253,14 +242,12 @@ function clearFilters() {
             </div>
           </div>
 
-          <!-- Дата начала -->
           <HenaketInputField v-model="startDate" type="date" label="Start date">
             <template #prefix>
               <HenaketIcon icon="calendar_today" size="18px" />
             </template>
           </HenaketInputField>
 
-          <!-- Дата окончания -->
           <HenaketInputField v-model="endDate" type="date" label="End date">
             <template #prefix>
               <HenaketIcon icon="event" size="18px" />
@@ -270,7 +257,6 @@ function clearFilters() {
       </div>
     </HenaketCard>
 
-    <!-- Состояния загрузки и ошибок -->
     <HenaketAlert
       v-if="transactionsLoading"
       variant="info"
@@ -295,7 +281,6 @@ function clearFilters() {
       icon="error"
     />
 
-    <!-- Таблица транзакций -->
     <HenaketCard
       v-else-if="filteredTransactions.length"
       class="overflow-hidden"
@@ -377,7 +362,6 @@ function clearFilters() {
       </div>
     </HenaketCard>
 
-    <!-- Пустое состояние -->
     <HenaketCard v-else class="p-12 justify-center">
       <div class="text-center space-y-4">
         <HenaketIcon
@@ -404,7 +388,6 @@ function clearFilters() {
       </div>
     </HenaketCard>
 
-    <!-- Модальное окно редактирования -->
     <HenaketModal v-model="isModalOpen">
       <template #title>
         <div class="flex items-center gap-3">
@@ -432,7 +415,6 @@ function clearFilters() {
       </template>
     </HenaketModal>
 
-    <!-- Модальное окно подтверждения удаления -->
     <HenaketModal v-model="deleteModal">
       <template #title>
         <div class="flex items-center gap-3">
@@ -443,7 +425,6 @@ function clearFilters() {
 
       <template #description>
         <div class="space-y-6">
-          <!-- Предупреждение -->
           <HenaketAlert
             variant="warning"
             icon="warning"
@@ -451,7 +432,6 @@ function clearFilters() {
             content="Are you sure you want to delete this transaction? This will permanently remove it from your records."
           />
 
-          <!-- Детали транзакции -->
           <div v-if="deleteTransactionData" class="space-y-4">
             <h4 class="font-medium text-gray-800">Transaction Details:</h4>
 
@@ -496,7 +476,6 @@ function clearFilters() {
             </HenaketCard>
           </div>
 
-          <!-- Fallback если данные не загружены -->
           <div v-else class="space-y-4">
             <h4 class="font-medium text-gray-800">Transaction Details:</h4>
             <HenaketCard class="p-4 bg-gray-50">
@@ -507,14 +486,12 @@ function clearFilters() {
             </HenaketCard>
           </div>
 
-          <!-- Дополнительная информация -->
           <HenaketInfoCard
             icon="info"
             title="Impact of Deletion"
             content="Deleting this transaction will also affect your financial statistics and category totals. Make sure this is the correct transaction to remove."
           />
 
-          <!-- Кнопки действий -->
           <div class="flex gap-3 pt-4">
             <HenaketButton
               @click="cancelDelete"
@@ -546,7 +523,6 @@ function clearFilters() {
       </template>
     </HenaketModal>
 
-    <!-- Информация о результатах -->
     <HenaketInfoCard
       v-if="
         !transactionsLoading &&
@@ -560,7 +536,6 @@ function clearFilters() {
       } transactions`"
     />
 
-    <!-- Дополнительные советы для пустого состояния -->
     <HenaketInfoCard
       v-if="
         !transactionsLoading &&

@@ -37,7 +37,6 @@ async function apiRequest<T>(
 export const categoriesApi = {
   getAll: (): Promise<Category[]> => apiRequest<Category[]>("/categories"),
 
-  // Обновляем для поддержки name и color
   create: (category: Pick<Category, "name" | "color">): Promise<Category> =>
     apiRequest<Category>("/categories", {
       method: "POST",

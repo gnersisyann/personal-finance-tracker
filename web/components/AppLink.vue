@@ -17,14 +17,13 @@
 
 <script setup lang="ts">
 type Props = {
-  link: any; // Заменить на Link из @newmoon/shared
+  link: any;
   hideOpenNewTab?: boolean;
   class?: string;
 };
 
 const props = defineProps<Props>();
 
-// Временная заглушка для useLocaleRoute
 const localeRoute = (link: string) => link;
 
 const isExternal = computed(() => {

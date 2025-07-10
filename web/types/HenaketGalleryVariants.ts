@@ -1,4 +1,3 @@
-// Базовые типы для Gallery
 export type HenaketGalleryImage = {
   id: string;
   url?: string;
@@ -23,7 +22,6 @@ export type HenaketGalleryProps = {
   };
 };
 
-// Типы для Lightbox
 export type HenaketLightboxSlide = HenaketGalleryItem;
 
 export type HenaketLightboxProps = {

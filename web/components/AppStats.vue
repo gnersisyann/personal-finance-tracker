@@ -2,7 +2,6 @@
 const { transactions, loadTransactions } = useTransactions();
 const { categories, loadCategories } = useCategories();
 
-// Загружаем данные при монтировании
 onMounted(async () => {
   await Promise.all([loadTransactions(), loadCategories()]);
 });
@@ -51,9 +50,7 @@ const topCategory = computed(() => {
 
 <template>
   <div class="space-y-6">
-    <!-- Основная статистика в карточках -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <!-- Общее количество транзакций -->
       <div
         class="p-4 text-center bg-white rounded-lg border border-gray-200 shadow"
       >
@@ -70,7 +67,6 @@ const topCategory = computed(() => {
         </div>
       </div>
 
-      <!-- Общая сумма -->
       <div
         class="p-4 text-center bg-white rounded-lg border border-gray-200 shadow"
       >
@@ -87,7 +83,6 @@ const topCategory = computed(() => {
         </div>
       </div>
 
-      <!-- Средняя транзакция -->
       <div
         class="p-4 text-center bg-white rounded-lg border border-gray-200 shadow"
       >
@@ -104,7 +99,6 @@ const topCategory = computed(() => {
         </div>
       </div>
 
-      <!-- Топ категория -->
       <div
         class="p-4 text-center bg-white rounded-lg border border-gray-200 shadow"
       >
@@ -125,9 +119,7 @@ const topCategory = computed(() => {
       </div>
     </div>
 
-    <!-- Детальная статистика -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Количество по категориям -->
       <div class="p-6 bg-white rounded-lg border border-gray-200 shadow">
         <div class="flex items-center gap-3 mb-4">
           <HenaketIcon icon="category" size="24px" class="text-blue-600" />
@@ -167,7 +159,6 @@ const topCategory = computed(() => {
         </div>
       </div>
 
-      <!-- Сумма по категориям -->
       <div class="p-6 bg-white rounded-lg border border-gray-200 shadow">
         <div class="flex items-center gap-3 mb-4">
           <HenaketIcon
@@ -214,7 +205,6 @@ const topCategory = computed(() => {
       </div>
     </div>
 
-    <!-- Информационная панель -->
     <div
       v-if="transactionCount === 0"
       class="p-4 bg-blue-50 border border-blue-200 rounded-lg"

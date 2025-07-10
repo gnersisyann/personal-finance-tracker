@@ -6,10 +6,6 @@
   </HenaketViewport>
 </template>
 
-<script lang="ts" setup>
-// Добавим базовые стили для всего приложения
-</script>
-
 <style>
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

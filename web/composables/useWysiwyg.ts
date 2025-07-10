@@ -3,7 +3,7 @@ export function useWysiwyg() {
 
   const $config = {
     public: {
-      assetsUrl: "/assets", // заглушка
+      assetsUrl: "/assets",
     },
   };
 
@@ -13,7 +13,6 @@ export function useWysiwyg() {
     },
   };
 
-  // Паттерн для поиска email адресов
   const emailMatchingPattern =
     /\b(?!<a[^>]*>)([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})(?![^<]*<\/a>)/gi;
 
@@ -49,7 +48,7 @@ export function useWysiwyg() {
         titles.push(header.textContent);
       }
 
-      rows.shift(); // remove first row
+      rows.shift();
 
       for (const row of rows) {
         for (const [index, cell] of [...row.cells].entries()) {

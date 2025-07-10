@@ -42,7 +42,6 @@ app.post("/categories", async (c) => {
       return c.json({ error: "Category name is required" }, 400);
     }
 
-    // Валидация цвета (опционально)
     const categoryColor =
       color && typeof color === "string" ? color : "#3b82f6";
 
@@ -66,7 +65,6 @@ app.put("/categories/:id", async (c) => {
     const body = await c.req.json();
     const { name, color } = body;
 
-    // Проверяем что хотя бы одно поле передано
     if (
       (!name || typeof name !== "string" || name.trim().length === 0) &&
       (!color || typeof color !== "string")
@@ -74,7 +72,6 @@ app.put("/categories/:id", async (c) => {
       return c.json({ error: "At least name or color is required" }, 400);
     }
 
-    // Готовим данные для обновления
     const updateData: any = {};
     if (name && typeof name === "string" && name.trim().length > 0) {
       updateData.name = name.trim();
@@ -99,12 +96,10 @@ app.delete("/categories/:id", async (c) => {
   try {
     const id = parseInt(c.req.param("id"));
 
-    // Сначала удаляем все транзакции этой категории
     await prisma.transaction.deleteMany({
       where: { categoryId: id },
     });
 
-    // Затем удаляем саму категорию
     await prisma.category.delete({
       where: { id },
     });
@@ -125,14 +120,12 @@ app.delete("/categories/batch", async (c) => {
       return c.json({ error: "IDs array is required" }, 400);
     }
 
-    // Сначала удаляем все транзакции этих категорий
     await prisma.transaction.deleteMany({
       where: {
         categoryId: { in: ids },
       },
     });
 
-    // Затем удаляем сами категории
     await prisma.category.deleteMany({
       where: {
         id: { in: ids },

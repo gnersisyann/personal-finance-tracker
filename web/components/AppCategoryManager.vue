@@ -5,7 +5,6 @@ const newCategoryName = ref("");
 const newCategoryColor = ref("#3b82f6");
 const isSubmitting = ref(false);
 
-// Добавляем состояние для модального окна удаления
 const deleteModal = ref(false);
 const categoriesToDelete = ref<number[]>([]);
 const isDeleting = ref(false);
@@ -25,7 +24,6 @@ onMounted(async () => {
   await loadCategories();
 });
 
-// Computed для данных удаляемых категорий
 const deleteData = computed(() => {
   if (categoriesToDelete.value.length === 0) return null;
 
@@ -44,7 +42,6 @@ function handleSelectionChanged(ids: number[]) {
   selectedIds.value = ids;
 }
 
-// Заменяем старую функцию deleteSelected
 function showDeleteConfirmation() {
   if (selectedIds.value.length === 0) return;
 
@@ -107,7 +104,6 @@ async function submitAddCategory() {
   }
 }
 
-// Предустановленные цвета
 const colorPresets = [
   "#3b82f6",
   "#ef4444",
@@ -126,7 +122,6 @@ const colorPresets = [
 
 <template>
   <div class="space-y-6">
-    <!-- Кнопки управления -->
     <div class="flex flex-wrap gap-3">
       <HenaketButton
         @click="openAddModal"
@@ -151,10 +146,8 @@ const colorPresets = [
       </HenaketButton>
     </div>
 
-    <!-- Список категорий -->
     <AppCategoryList @selection-changed="handleSelectionChanged" />
 
-    <!-- Модальное окно добавления категории -->
     <HenaketModal v-model="showAddModal">
       <template #title>
         <div class="flex items-center gap-3">
@@ -165,7 +158,6 @@ const colorPresets = [
 
       <template #description>
         <div class="space-y-6">
-          <!-- Заголовок формы -->
           <div class="text-center pb-4">
             <HenaketIcon
               icon="category"
@@ -178,9 +170,7 @@ const colorPresets = [
             </p>
           </div>
 
-          <!-- Поля формы -->
           <div class="space-y-4">
-            <!-- Название категории -->
             <HenaketInputField
               v-model="newCategoryName"
               label="Category Name"
@@ -193,13 +183,11 @@ const colorPresets = [
               </template>
             </HenaketInputField>
 
-            <!-- Выбор цвета -->
             <div class="space-y-3">
               <label class="block text-sm font-medium text-gray-700">
                 Category Color
               </label>
 
-              <!-- Текущий цвет -->
               <div class="flex items-center gap-3">
                 <div
                   class="w-8 h-8 rounded-full border-2 border-gray-300"
@@ -216,7 +204,6 @@ const colorPresets = [
                 }}</span>
               </div>
 
-              <!-- Предустановленные цвета -->
               <div class="grid grid-cols-6 gap-2">
                 <button
                   v-for="color in colorPresets"
@@ -235,7 +222,6 @@ const colorPresets = [
             </div>
           </div>
 
-          <!-- Предпросмотр -->
           <HenaketCard
             v-if="newCategoryName.trim()"
             class="p-4 bg-green-50 border-green-200"
@@ -257,7 +243,6 @@ const colorPresets = [
             </div>
           </HenaketCard>
 
-          <!-- Кнопки -->
           <div class="flex gap-3 pt-4">
             <HenaketButton
               @click="closeAddModal"
@@ -289,7 +274,6 @@ const colorPresets = [
       </template>
     </HenaketModal>
 
-    <!-- Модальное окно подтверждения удаления -->
     <HenaketModal v-model="deleteModal">
       <template #title>
         <div class="flex items-center gap-3">
@@ -306,7 +290,6 @@ const colorPresets = [
 
       <template #description>
         <div class="max-w-full space-y-6">
-          <!-- Предупреждение -->
           <HenaketAlert
             variant="warning"
             icon="warning"
@@ -318,7 +301,6 @@ const colorPresets = [
             "
           />
 
-          <!-- Список удаляемых категорий -->
           <div v-if="deleteData" class="space-y-4">
             <h4 class="font-medium text-gray-800">
               {{
@@ -355,7 +337,7 @@ const colorPresets = [
                 </div>
               </HenaketCard>
             </div>
-            <!-- Статистика удаления -->
+
             <HenaketCard class="p-4 bg-gray-50">
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
@@ -376,7 +358,6 @@ const colorPresets = [
             </HenaketCard>
           </div>
 
-          <!-- Fallback если данные не загружены -->
           <div v-else class="space-y-4">
             <h4 class="font-medium text-gray-800">Category Details:</h4>
             <HenaketCard class="p-4 bg-gray-50">
@@ -387,7 +368,6 @@ const colorPresets = [
             </HenaketCard>
           </div>
 
-          <!-- Дополнительные предупреждения -->
           <div class="space-y-3">
             <HenaketInfoCard
               icon="info"
@@ -401,7 +381,6 @@ const colorPresets = [
             />
           </div>
 
-          <!-- Кнопки действий -->
           <div class="flex gap-3 pt-4">
             <HenaketButton
               @click="cancelDelete"

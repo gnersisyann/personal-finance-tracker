@@ -64,7 +64,6 @@ const props = defineProps<Props>();
 
 const { humanizeFileSize } = useFile();
 
-// Импорт иконок файлов (если есть)
 const icons = computed(() => {
   try {
     return importFolder(import.meta.glob("@/assets/icons/*", { eager: true }));
@@ -86,7 +85,6 @@ const fileSizeHumanReadable = computed(() =>
 
 function openFile() {
   if (props.attachment.downloadable) {
-    // Для загрузки используем программный download
     const link = document.createElement("a");
     link.href = props.attachment.fileUrl;
     link.download = props.attachment.title;
@@ -94,7 +92,6 @@ function openFile() {
     link.click();
     document.body.removeChild(link);
   } else {
-    // Для просмотра открываем в новой вкладке
     window.open(props.attachment.fileUrl, "_blank");
   }
 }

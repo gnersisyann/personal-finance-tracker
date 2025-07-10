@@ -74,7 +74,6 @@ const sortOrder = ref(true);
 
 const sort = defineModel<string[]>("sort", { default: () => [] });
 
-// Добавляем computed свойство для отсортированных данных
 const sortedItems = computed(() => {
   if (
     sortHeaderIndex.value === -1 ||
@@ -101,16 +100,13 @@ const sortedItems = computed(() => {
   });
 });
 
-// Функция для получения значения поля из объекта
 function getFieldValue(item: any, field: string): any {
   return field.split(".").reduce((obj, key) => {
     return obj && obj[key] !== undefined ? obj[key] : "";
   }, item);
 }
 
-// Функция для сравнения значений
 function compareValues(a: any, b: any): number {
-  // Handle different data types
   if (typeof a === "string" && typeof b === "string") {
     return a.localeCompare(b, "ru", { numeric: true, sensitivity: "base" });
   }
@@ -119,14 +115,12 @@ function compareValues(a: any, b: any): number {
     return a - b;
   }
 
-  // Convert to strings for comparison
   const aStr = String(a).toLowerCase();
   const bStr = String(b).toLowerCase();
 
   return aStr.localeCompare(bStr, "ru", { numeric: true, sensitivity: "base" });
 }
 
-// Обновляем модель сортировки при изменении состояния
 watch([sortHeaderIndex, sortOrder], () => {
   const header = props.headers[sortHeaderIndex.value];
 

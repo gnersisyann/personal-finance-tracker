@@ -8,10 +8,6 @@ export type HenaketStructuredListProps = {
   hideHeaders?: boolean;
 };
 
-export type HenaketStructuredListRowProps = {
-  // Свойства для Row будут переданы через слоты и attrs
-};
-
 export type HenaketStructuredListCellProps = {
   statusIndicator?: boolean;
   status?: boolean;
