@@ -1,4 +1,4 @@
-Collecting workspace information# Personal Finance Tracker
+# Personal Finance Tracker
 
 A full-stack personal finance tracker application built with Nuxt 3 (frontend) and Hono + Prisma + PostgreSQL (backend).
 
